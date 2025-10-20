@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: rgba(0, 204, 0, 0.3);
+  }
+
+  body {
+    background: #000;
+    color: #00cc00;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Subtle scanlines only */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      rgba(0, 204, 0, 0.02) 1px,
+      transparent 2px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+}
+
+@layer utilities {
+
+  /* Terminal card */
+  .cyber-card {
+    position: relative;
+    background: #000;
+    border: 1px solid #00cc00;
+    transition: border-color 0.2s ease;
+  }
+
+  .cyber-card:hover {
+    border-color: #00cc00;
+  }
+
+  /* Simple terminal text */
+  .holo-bg {
+    color: #00cc00;
+  }
+
+  .cube-container {
+    @apply cyber-card p-4 transition-all duration-200 cursor-move;
+  }
+
+  .cube-container:hover {
+    transform: scale(1.05) rotateX(2deg);
+  }
+
+  .cube-container:active {
+    transform: scale(0.95);
+    cursor: grabbing;
+  }
+
+  /* Terminal cursor */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .terminal-cursor::after {
+    content: '█';
+    animation: blink 0.8s infinite;
+    color: #00cc00;
+  }
+
+  /* Terminal text colors - no glow */
+  .neon-green {
+    color: #00cc00;
+  }
+
+  .neon-orange {
+    color: #ff9900;
+  }
+
+  .neon-red {
+    color: #ff0000;
+  }
+
+  .neon-yellow {
+    color: #ffff00;
+  }
+
+}
+
