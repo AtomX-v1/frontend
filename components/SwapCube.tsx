@@ -38,7 +38,7 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
       setLoading(true);
       try {
         const amountInLamports = Math.floor(
-          cube.amountIn * Math.pow(10, cube.tokenIn!.decimals)
+          (cube.amountIn || 0) * Math.pow(10, cube.tokenIn!.decimals)
         );
         const quote = await getJupiterQuote(
           cube.tokenIn!.mint,
