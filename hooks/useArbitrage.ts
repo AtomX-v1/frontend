@@ -4,7 +4,7 @@ import { COMMON_TOKENS } from '@/lib/constants';
 import { ArbitrageOpportunity } from '@/types';
 import { generateId } from '@/lib/utils';
 
-export function useArbitrage(minProfit: number = 10, enabled: boolean = true) {
+export function useArbitrage(minProfit: number = -100, enabled: boolean = true) {
   const [opportunities, setOpportunities] = useState<ArbitrageOpportunity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -14,9 +14,8 @@ export function useArbitrage(minProfit: number = 10, enabled: boolean = true) {
 
     try {
       setLoading(true);
-      const foundOpportunities = await findArbitrageOpportunities(COMMON_TOKENS, 0.1);
+      const foundOpportunities = await findArbitrageOpportunities(COMMON_TOKENS, -100);
 
-      // Add IDs and filter by min profit
       const opportunities = foundOpportunities
         .map(op => ({ ...op, id: generateId() }))
         .filter(op => op.estimatedProfit >= minProfit);
@@ -24,7 +23,6 @@ export function useArbitrage(minProfit: number = 10, enabled: boolean = true) {
       setOpportunities(opportunities);
       setError(null);
     } catch (err) {
-      console.error('Error scanning arbitrage:', err);
       setError(err as Error);
     } finally {
       setLoading(false);
@@ -36,8 +34,7 @@ export function useArbitrage(minProfit: number = 10, enabled: boolean = true) {
 
     scanOpportunities();
 
-    // Scan every 20 seconds
-    const interval = setInterval(scanOpportunities, 20000);
+    const interval = setInterval(scanOpportunities, 30000);
 
     return () => clearInterval(interval);
   }, [minProfit, enabled]);

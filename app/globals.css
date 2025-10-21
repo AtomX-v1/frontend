@@ -14,7 +14,6 @@
     overflow-x: hidden;
   }
 
-  /* Subtle scanlines only */
   body::before {
     content: '';
     position: fixed;
@@ -26,26 +25,35 @@
       transparent 2px
     );
     pointer-events: none;
-    z-index: 9999;
+    z-index: 1;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+    pointer-events: none;
+    z-index: 1;
   }
 
 }
 
 @layer utilities {
 
-  /* Terminal card */
   .cyber-card {
     position: relative;
     background: #000;
     border: 1px solid #00cc00;
     transition: border-color 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 204, 0, 0.1);
   }
 
   .cyber-card:hover {
     border-color: #00cc00;
+    box-shadow: 0 0 20px rgba(0, 204, 0, 0.2);
   }
 
-  /* Simple terminal text */
   .holo-bg {
     color: #00cc00;
   }
@@ -63,7 +71,6 @@
     cursor: grabbing;
   }
 
-  /* Terminal cursor */
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
@@ -75,7 +82,6 @@
     color: #00cc00;
   }
 
-  /* Terminal text colors - no glow */
   .neon-green {
     color: #00cc00;
   }
@@ -92,5 +98,172 @@
     color: #ffff00;
   }
 
-}
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #000;
+    border: 1px solid #00cc00;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #00cc00;
+    border: 1px solid #000;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #00ff00;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #00cc00 #000;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes pulse-green {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(0, 204, 0, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(0, 204, 0, 0.8);
+    }
+  }
+
+  .pulse-green {
+    animation: pulse-green 2s ease-in-out infinite;
+  }
+
+  @keyframes scan-line {
+    0% {
+      top: 0%;
+    }
+    100% {
+      top: 100%;
+    }
+  }
+
+  .scan-line {
+    position: relative;
+  }
+
+  .scan-line::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 204, 0, 0.8),
+      transparent
+    );
+    animation: scan-line 4s linear infinite;
+    z-index: 1;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.95; }
+  }
+
+  .terminal-flicker {
+    animation: flicker 0.15s ease-in-out infinite;
+  }
+
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  .typing-animation {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typing 2s steps(40) 1;
+  }
+
+  @keyframes matrix-rain {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+
+  .border-glow {
+    box-shadow:
+      0 0 5px rgba(0, 204, 0, 0.5),
+      inset 0 0 5px rgba(0, 204, 0, 0.2);
+  }
+
+  .border-glow-orange {
+    box-shadow:
+      0 0 5px rgba(255, 153, 0, 0.5),
+      inset 0 0 5px rgba(255, 153, 0, 0.2);
+  }
+
+  .border-glow-yellow {
+    box-shadow:
+      0 0 5px rgba(255, 255, 0, 0.5),
+      inset 0 0 5px rgba(255, 255, 0, 0.2);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  .text-shadow-green {
+    text-shadow: 0 0 10px rgba(0, 204, 0, 0.5);
+  }
+
+  .text-shadow-orange {
+    text-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
+  }
+
+  .text-shadow-yellow {
+    text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+  }
+
+  @keyframes data-stream {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .data-stream {
+    animation: data-stream 3s linear infinite;
+  }
+
+}
