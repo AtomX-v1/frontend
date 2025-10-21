@@ -16,7 +16,7 @@ interface SwapCubeProps {
 
 export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapCubeProps) {
   const dexes: { id: DexType; label: string; color: string }[] = [
-    { id: 'orca', label: 'ORCA', color: '#00cc00' },
+    { id: 'orca', label: 'ORCA', color: '#9333ea' },
     { id: 'raydium', label: 'RAYDIUM', color: '#ff9900' },
     { id: 'meteora', label: 'METEORA', color: '#ff0000' },
     { id: 'jupiter', label: 'JUPITER', color: '#ffff00' },
@@ -70,7 +70,7 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
     >
       <button
         onClick={onRemove}
-        className="absolute top-2 right-2 text-gray-600 hover:text-[#ff0000] transition-colors font-mono text-xs"
+        className="absolute top-2 right-2 text-white hover:text-[#ff0000] transition-colors font-mono text-xs"
       >
         [X]
       </button>
@@ -85,7 +85,7 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
                 'px-3 py-1 font-mono text-xs transition-colors border',
                 cube.dex === dex.id
                   ? 'border-current'
-                  : 'border-gray-700 text-gray-600 hover:border-gray-500'
+                  : 'border-gray-700 text-white hover:border-gray-500'
               )}
               style={{
                 color: cube.dex === dex.id ? dex.color : undefined,
@@ -98,14 +98,14 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-600 font-mono mb-1 block">FROM</label>
+            <label className="text-xs text-white font-mono mb-1 block">FROM</label>
             <select
               value={cube.tokenIn?.symbol || ''}
               onChange={(e) => {
                 const token = COMMON_TOKENS.find((t) => t.symbol === e.target.value);
                 onUpdate({ ...cube, tokenIn: token });
               }}
-              className="w-full bg-black border border-[#00cc00]/30 px-3 py-2 text-[#00cc00] font-mono text-sm focus:outline-none focus:border-[#00cc00]"
+              className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
             >
               <option value="">SELECT</option>
               {COMMON_TOKENS.map((token) => (
@@ -117,23 +117,23 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
           </div>
 
           <div>
-            <label className="text-xs text-gray-600 font-mono mb-1 block">AMOUNT</label>
+            <label className="text-xs text-white font-mono mb-1 block">AMOUNT</label>
             <input
               type="number"
               value={cube.amountIn || ''}
               onChange={(e) => onUpdate({ ...cube, amountIn: parseFloat(e.target.value) })}
               placeholder="0.00"
-              className="w-full bg-black border border-[#00cc00]/30 px-3 py-2 text-[#00cc00] font-mono text-sm focus:outline-none focus:border-[#00cc00]"
+              className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
             />
           </div>
         </div>
 
         <div className="flex justify-center">
-          <div className="font-mono text-xs text-gray-600">↓</div>
+          <div className="font-mono text-xs text-white">↓</div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-600 font-mono mb-1 block">TO</label>
+          <label className="text-xs text-white font-mono mb-1 block">TO</label>
           <select
             value={cube.tokenOut?.symbol || ''}
             onChange={(e) => {
@@ -150,12 +150,12 @@ export default function SwapCube({ cube, onUpdate, onRemove, isDragging }: SwapC
             ))}
           </select>
           {estimatedOutput !== null && (
-            <div className="text-xs text-gray-600 font-mono mt-2">
+            <div className="text-xs text-white font-mono mt-2">
               EST_OUTPUT: {formatNumber(estimatedOutput, 4)} {cube.tokenOut?.symbol}
             </div>
           )}
           {loading && (
-            <div className="text-xs text-gray-600 font-mono mt-2">FETCHING_QUOTE...</div>
+            <div className="text-xs text-white font-mono mt-2">FETCHING_QUOTE...</div>
           )}
         </div>
       </div>

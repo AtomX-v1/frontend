@@ -4,27 +4,138 @@ import { useState, useEffect, useRef } from 'react';
 import ArbitrageCard from '@/components/ArbitrageCard';
 import { ArbitrageOpportunity } from '@/types';
 import { useArbitrage } from '@/hooks/useArbitrage';
+import { useScanner } from '@/hooks/useScanner';
 
 interface LogEntry {
   timestamp: string;
-  type: 'info' | 'success' | 'error' | 'scan';
+  type: 'info' | 'success' | 'error' | 'scan' | 'PRICE' | 'ROUTE' | 'SCAN' | 'SYSTEM' | 'WS' | 'opportunity';
   message: string;
+  category?: string;
+  level?: string;
+  id?: string;
 }
 
 export default function ArbitragePage() {
   const connected = false;
   const [minProfit, setMinProfit] = useState(-10);
   const [enableScan, setEnableScan] = useState(false);
-  const { opportunities, loading, refresh } = useArbitrage(minProfit, enableScan);
+  const { opportunities: fallbackOpportunities, loading: fallbackLoading, refresh } = useArbitrage(minProfit, enableScan);
+  
+  // State for scanner logs (to show in live opportunities section)
+  const [scannerLogs, setScannerLogs] = useState<LogEntry[]>([]);
+
+  // Handle scanner log messages
+  const handleScannerLog = (logData: any) => {
+    // Filter out noise - only show scanning-related logs
+    const allowedCategories = ['PRICE', 'ROUTE', 'SCAN'];
+    const isOpportunity = logData.message?.toLowerCase().includes('opportunity');
+    
+    // Skip API health checks, WebSocket connections, and other noise
+    if (logData.category === 'API' && (
+      logData.message?.includes('/health') ||
+      logData.message?.includes('GET /') ||
+      logData.message?.includes('POST /')
+    )) {
+      return;
+    }
+    if (logData.category === 'WS' && (
+      logData.message?.includes('Client connected') || 
+      logData.message?.includes('Broadcasted to') ||
+      logData.message?.includes('Client disconnected') ||
+      logData.message?.includes('clients')
+    )) {
+      return;
+    }
+    
+    // Only allow scanning categories or opportunity messages
+    if (!allowedCategories.includes(logData.category) && !isOpportunity) {
+      return;
+    }
+    
+    const timestamp = new Date(logData.timestamp || Date.now()).toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+    
+    const logEntry: LogEntry = {
+      timestamp,
+      type: logData.category || 'info',
+      message: logData.message || '',
+      category: logData.category,
+      level: logData.level
+    };
+    
+    // Add to scanner logs (shown in live opportunities section)
+    setScannerLogs(prev => {
+      // Create unique identifier for this log entry
+      const logId = `${logEntry.timestamp}-${logData.timestamp || Date.now()}-${logEntry.message.slice(0, 20)}`;
+      
+      // Prevent duplicates by checking if we already have this exact log
+      const isDuplicate = prev.some(log => {
+        const existingId = `${log.timestamp}-${log.category || ''}-${log.message.slice(0, 20)}`;
+        return existingId === logId || (
+          log.timestamp === logEntry.timestamp && 
+          log.message === logEntry.message &&
+          Math.abs(new Date(logData.timestamp || Date.now()).getTime() - new Date().getTime()) < 1000
+        );
+      });
+      
+      if (isDuplicate) return prev;
+      
+      return [...prev.slice(-99), { ...logEntry, id: logId }];
+    });
+  };
+  
+  // Handle scanner opportunity messages
+  const handleScannerOpportunity = (opportunityData: any) => {
+    addLog('opportunity', `OPPORTUNITY DETECTED: ${opportunityData.profitUSD?.toFixed(2) || 'N/A'}$ profit`);
+  };
+  
+  const scanner = useScanner(handleScannerLog, handleScannerOpportunity);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [scanCount, setScanCount] = useState(0);
   const [bootComplete, setBootComplete] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [networkLatency, setNetworkLatency] = useState(0);
+  
+  // Use scanner opportunities if available, otherwise fallback to local arbitrage
+  const opportunities = scanner.connected ? scanner.opportunities.map(op => ({
+    id: op.id,
+    profitPercentage: op.profitPercentage,
+    estimatedProfit: op.profitUSD,
+    requiredAmount: 1000, // Default amount
+    path: op.route || [],
+    confidence: 0.8,
+    estimatedGas: 0.01,
+    dexes: ['Jupiter'],
+    tokens: [op.inputToken, op.outputToken],
+    timestamp: op.timestamp || Date.now()
+  } as ArbitrageOpportunity)) : fallbackOpportunities;
+
+  // Log scanner connection status for debugging
+  useEffect(() => {
+    console.log('Scanner connection status:', {
+      connected: scanner.connected,
+      isRunning: scanner.isRunning,
+      opportunities: scanner.opportunities.length,
+      error: scanner.error,
+      status: scanner.status,
+      fullStatus: scanner.fullStatus,
+      opportunitiesData: scanner.opportunitiesData
+    });
+  }, [scanner.connected, scanner.isRunning, scanner.opportunities.length, scanner.error, scanner.status, scanner.fullStatus, scanner.opportunitiesData]);
+  
+  const loading = scanner.connected ? scanner.loading : fallbackLoading;
 
   const addLog = (type: LogEntry['type'], message: string) => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    setLogs(prev => [...prev.slice(-50), { timestamp, type, message }]);
+    
+    // Only add to opportunity alerts if it's an opportunity or important system message
+    if (type === 'opportunity' || (type === 'SYSTEM' && (message.includes('SCANNER') || message.includes('READY')))) {
+      setLogs(prev => [...prev.slice(-50), { timestamp, type, message }]);
+    }
   };
 
   useEffect(() => {
@@ -37,6 +148,7 @@ export default function ArbitragePage() {
         'LOADING DEX LIQUIDITY POOLS',
         'CALIBRATING PROFIT CALCULATION MATRIX',
         'ESTABLISHING WEBSOCKET CONNECTIONS',
+        scanner.connected ? 'SCANNER API - CONNECTION ESTABLISHED' : 'SCANNER API - OFFLINE (FALLBACK MODE)',
         'SYSTEM READY - MAINNET ARBITRAGE SCANNER ONLINE'
       ];
 
@@ -45,11 +157,17 @@ export default function ArbitragePage() {
         addLog('info', messages[i]);
       }
       setBootComplete(true);
-      addLog('success', 'SCANNER READY - CLICK [SCAN] TO START');
+      
+      if (scanner.connected) {
+        addLog('success', 'SCANNER API READY - CLICK [START SCANNER] FOR LIVE LOG STREAMING');
+        addLog('info', 'SYSTEM LOGS WILL SHOW REAL-TIME SCANNER ACTIVITY');
+      } else {
+        addLog('success', 'FALLBACK MODE READY - CLICK [SCAN] FOR MANUAL SEARCH');
+      }
     };
 
     bootSequence();
-  }, []);
+  }, [scanner.connected]);
 
   useEffect(() => {
     if (bootComplete && enableScan && opportunities.length > 0) {
@@ -69,10 +187,18 @@ export default function ArbitragePage() {
     const measureLatency = async () => {
       const start = performance.now();
       try {
-        await fetch('https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&onlyDirectRoutes=true');
+        // Use scanner API health check if available, otherwise fallback to Jupiter
+        if (scanner.connected) {
+          await fetch('http://localhost:3002/health');
+        } else {
+          await fetch('https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&onlyDirectRoutes=true', {
+            mode: 'cors'
+          });
+        }
         const latency = Math.round(performance.now() - start);
         setNetworkLatency(latency);
-      } catch {
+      } catch (error) {
+        console.warn('Latency check failed:', error);
         setNetworkLatency(999);
       }
     };
@@ -80,62 +206,87 @@ export default function ArbitragePage() {
     measureLatency();
     const interval = setInterval(measureLatency, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [scanner.connected]);
 
+  // Removed auto-scroll for opportunity alerts
+
+  // Removed auto-scroll for scanner logs to prevent unwanted scrolling
+
+  // Log scanner errors
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+    if (scanner.error) {
+      addLog('error', `SCANNER API: ${scanner.error}`);
+    }
+  }, [scanner.error]);
+
+  // Log scanner status changes
+  useEffect(() => {
+    if (scanner.status && bootComplete) {
+      const status = scanner.isRunning ? 'RUNNING' : 'STOPPED';
+      addLog('info', `SCANNER STATUS: ${status} | SCANS: ${scanner.status.scanCount || 0}`);
+    }
+  }, [scanner.status, scanner.isRunning, bootComplete]);
 
   const handleRefresh = async () => {
-    if (!enableScan) setEnableScan(true);
-    addLog('scan', 'MANUAL SCAN INITIATED - ANALYZING MARKET');
-    await refresh();
-  };
-
-  const executeArbitrage = async (opportunity: ArbitrageOpportunity) => {
-    if (!connected) {
-      addLog('error', 'WALLET NOT CONNECTED - EXECUTION ABORTED');
-      return;
-    }
-
-    try {
-      addLog('info', `EXECUTING ARBITRAGE: ${opportunity.id.substring(0, 8)}`);
-
-      const { getJupiterQuote } = await import('@/lib/jupiter');
-
-      for (let i = 0; i < opportunity.path.length; i++) {
-        const step = opportunity.path[i];
-        const amountIn = i === 0
-          ? Math.floor(opportunity.requiredAmount * Math.pow(10, step.from.decimals))
-          : Math.floor(step.expectedOutput * Math.pow(10, step.from.decimals));
-
-        const quote = await getJupiterQuote(
-          step.from.mint,
-          step.to.mint,
-          amountIn
-        );
-
-        if (!quote) {
-          throw new Error(`QUOTE FAILED FOR STEP ${i + 1}`);
-        }
-
-        addLog('info', `STEP ${i + 1}: ${step.from.symbol} -> ${step.to.symbol} [${step.dex.toUpperCase()}]`);
+    if (scanner.connected) {
+      addLog('scan', 'SCANNER API - MANUAL SCAN INITIATED');
+      try {
+        await scanner.manualScan();
+        addLog('success', 'SCANNER API - MANUAL SCAN COMPLETED');
+      } catch (error) {
+        addLog('error', `SCANNER API ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-
-      addLog('success', `TX READY - PROFIT: $${opportunity.estimatedProfit.toFixed(2)}`);
-    } catch (error) {
-      addLog('error', `EXECUTION FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
+    } else {
+      if (!enableScan) setEnableScan(true);
+      addLog('scan', 'FALLBACK MODE - ANALYZING MARKET');
+      await refresh();
     }
   };
 
-  const profitableOps = opportunities.filter((op) => op.profitPercentage > 0.1);
-  const totalPotentialProfit = profitableOps.reduce((sum, op) => sum + op.estimatedProfit, 0);
+  const handleStartScanning = async () => {
+    if (scanner.connected) {
+      addLog('SYSTEM', '🟣 [SYSTEM] STARTING SCANNER API - LIVE LOG STREAMING ENABLED');
+      try {
+        await scanner.startScanner({
+          scanInterval: 30000,
+          minProfitUSD: minProfit,
+          minProfitPercentage: 0.5
+        });
+        addLog('SYSTEM', '🟣 [SYSTEM] SCANNER API STARTED - RECEIVING LIVE LOGS');
+        setEnableScan(true);
+      } catch (error) {
+        addLog('error', `🟣 [SYSTEM] SCANNER START FAILED: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      setEnableScan(true);
+      addLog('info', 'FALLBACK MODE - LOCAL SCANNING ENABLED');
+      await refresh();
+    }
+  };
+
+  const handleStopScanning = async () => {
+    if (scanner.connected && scanner.isRunning) {
+      addLog('SYSTEM', '🟣 [SYSTEM] STOPPING SCANNER API');
+      try {
+        await scanner.stopScanner();
+        addLog('SYSTEM', '🟣 [SYSTEM] SCANNER API STOPPED - LOG STREAMING ENDED');
+        setEnableScan(false);
+      } catch (error) {
+        addLog('error', `🟣 [SYSTEM] SCANNER STOP FAILED: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      setEnableScan(false);
+      addLog('SYSTEM', '🟣 [SYSTEM] SCANNING DISABLED');
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="max-w-[1800px] mx-auto">
         <div className="cyber-card p-6 mb-6 bg-black/90 backdrop-blur-sm">
-          <pre className="text-[11px] md:text-sm text-[#00cc00] leading-tight mb-4 overflow-x-auto">
+          <pre className="text-[11px] md:text-sm text-[#9333ea] leading-tight mb-4 overflow-x-auto">
 {`
  █████╗ ████████╗ ██████╗ ███╗   ███╗██╗  ██╗
 ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║╚██╗██╔╝
@@ -149,22 +300,43 @@ export default function ArbitragePage() {
           </pre>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="font-mono text-xs">
-              <span className="text-gray-600">NETWORK:</span>{' '}
-              <span className="text-[#00cc00]">SOLANA-MAINNET</span>
-              <span className="text-gray-600 ml-4">LATENCY:</span>{' '}
-              <span className={networkLatency < 200 ? 'text-[#00cc00]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
+              <span className="text-white">NETWORK:</span>{' '}
+              <span className="text-[#9333ea]">SOLANA-MAINNET</span>
+              <span className="text-white ml-4">LATENCY:</span>{' '}
+              <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                 {networkLatency}ms
               </span>
-              <span className="text-gray-600 ml-4">SCANS:</span>{' '}
+              <span className="text-white ml-4">SCANS:</span>{' '}
               <span className="text-[#ff9900]">{scanCount}</span>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="border border-[#00cc00] px-4 py-2 text-[#00cc00] hover:bg-[#00cc00] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
-            >
-              {loading ? '[SCANNING...]' : '[SCAN NOW]'}
-            </button>
+            <div className="flex gap-2">
+              {scanner.connected && scanner.isRunning ? (
+                <button
+                  onClick={handleStopScanning}
+                  disabled={loading}
+                  className="border border-[#ff0000] px-4 py-2 text-[#ff0000] hover:bg-[#ff0000] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
+                >
+                  {loading ? '[STOPPING...]' : '[STOP SCANNER]'}
+                </button>
+              ) : (
+                <button
+                  onClick={scanner.connected ? handleStartScanning : handleRefresh}
+                  disabled={loading}
+                  className="border border-[#9333ea] px-4 py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
+                >
+                  {loading ? '[SCANNING...]' : scanner.connected ? '[START SCANNER]' : '[SCAN NOW]'}
+                </button>
+              )}
+              {scanner.connected && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="border border-[#9333ea] px-4 py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
+                >
+                  {loading ? '[SCANNING...]' : '[MANUAL SCAN]'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -173,16 +345,16 @@ export default function ArbitragePage() {
             <div className="cyber-card p-6 bg-black/90 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="font-mono text-sm">
-                  <span className="text-[#00cc00]">LIVE OPPORTUNITIES</span>
-                  <span className="text-gray-600 ml-2">[{opportunities.length}]</span>
+                  <span className="text-[#9333ea]">LIVE SCANNER ACTIVITY</span>
+                  <span className="text-white ml-2">[{scannerLogs.length}]</span>
                 </div>
-                <label className="flex items-center gap-2 text-xs font-mono text-gray-600">
+                <label className="flex items-center gap-2 text-xs font-mono text-white">
                   MIN_PROFIT_$
                   <input
                     type="number"
                     value={minProfit}
                     onChange={(e) => setMinProfit(parseFloat(e.target.value))}
-                    className="w-20 bg-black border border-[#00cc00]/30 px-2 py-1 text-[#00cc00] font-mono text-sm focus:outline-none focus:border-[#00cc00]"
+                    className="w-20 bg-black border border-[#9333ea]/30 px-2 py-1 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
                   />
                 </label>
               </div>
@@ -190,43 +362,44 @@ export default function ArbitragePage() {
               {loading ? (
                 <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
                   <div className="text-center">
-                    <div className="w-12 h-12 border-3 border-[#00cc00] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600 font-mono text-lg">SCANNING LIQUIDITY POOLS...</p>
+                    <div className="w-12 h-12 border-3 border-[#9333ea] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-white font-mono text-lg">SCANNING LIQUIDITY POOLS...</p>
                     <p className="text-gray-700 font-mono text-xs mt-2">CHECKING 64 TOKEN PAIRS</p>
                   </div>
                 </div>
-              ) : !enableScan ? (
+              ) : !enableScan && !scanner.isRunning ? (
                 <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
                   <div className="text-center">
-                    <p className="text-gray-600 font-mono text-lg mb-4">SCANNER READY</p>
-                    <p className="text-gray-700 font-mono text-sm mb-6">CLICK [SCAN NOW] TO SEARCH FOR ARBITRAGE OPPORTUNITIES</p>
+                    <p className="text-white font-mono text-lg mb-4">SCANNER READY</p>
+                    <p className="text-gray-700 font-mono text-sm mb-6">CLICK [START SCANNER] TO BEGIN LIVE SCANNING</p>
                     <button
-                      onClick={handleRefresh}
-                      className="border border-[#00cc00] px-6 py-3 text-[#00cc00] hover:bg-[#00cc00] hover:text-black transition-colors font-mono text-sm"
+                      onClick={scanner.connected ? handleStartScanning : handleRefresh}
+                      className="border border-[#9333ea] px-6 py-3 text-[#9333ea] hover:bg-[#9333ea] hover:text-black transition-colors font-mono text-sm"
                     >
-                      [START SCANNING]
+                      {scanner.connected ? '[START SCANNER API]' : '[START SCANNING]'}
                     </button>
                   </div>
                 </div>
-              ) : opportunities.length === 0 ? (
+              ) : scannerLogs.length === 0 ? (
                 <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
                   <div className="text-center">
-                    <p className="text-gray-600 font-mono text-lg mb-2">NO_ROUTES_DETECTED</p>
-                    <p className="text-gray-700 font-mono text-sm">ALL TOKEN PAIRS CHECKED</p>
-                    <p className="text-gray-800 font-mono text-xs mt-4">MARKETS ARE HIGHLY EFFICIENT</p>
-                    <p className="text-gray-800 font-mono text-xs">TRY AGAIN IN A FEW SECONDS</p>
+                    <p className="text-white font-mono text-lg mb-2">WAITING_FOR_SCANNER_LOGS</p>
+                    <p className="text-gray-700 font-mono text-sm">SCANNER RUNNING - LOGS WILL APPEAR HERE</p>
+                    <p className="text-gray-800 font-mono text-xs mt-4">REAL-TIME SCANNER ACTIVITY</p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-                  {opportunities.map((opportunity) => (
-                    <ArbitrageCard
-                      key={opportunity.id}
-                      opportunity={opportunity}
-                      onExecute={executeArbitrage}
-                      connected={connected}
-                    />
-                  ))}
+                <div className="h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-2 font-mono text-[16px] leading-relaxed tracking-wider" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
+                    {scannerLogs.map((log, i) => (
+                      <div key={i} className="flex gap-3 p-3 hover:bg-gray-900/50 transition-colors border-l-2 border-gray-800">
+                        <span className="text-gray-400 flex-shrink-0 font-mono text-[12px]">[{log.timestamp}]</span>
+                        <span className="text-white font-mono text-[16px] flex-1" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
+                          {log.message}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -234,19 +407,20 @@ export default function ArbitragePage() {
 
           <div className="space-y-6">
             <div className="cyber-card p-4 bg-black/90 backdrop-blur-sm">
-              <h3 className="text-sm font-mono text-[#00cc00] mb-3 border-b border-[#00cc00]/30 pb-2 flex items-center justify-between">
-                <span>SYSTEM LOGS</span>
-                <span className="text-gray-600">[LIVE]</span>
+              <h3 className="text-sm font-mono text-[#9333ea] mb-3 border-b border-[#9333ea]/30 pb-2 flex items-center justify-between">
+                <span>OPPORTUNITY ALERTS</span>
+                <span className="text-white">[LIVE]</span>
               </h3>
               <div className="h-96 overflow-y-auto space-y-1 font-mono text-[10px] custom-scrollbar">
                 {logs.map((log, i) => (
                   <div key={i} className="flex gap-2">
                     <span className="text-gray-700">[{log.timestamp}]</span>
                     <span className={
-                      log.type === 'success' ? 'text-[#00cc00]' :
+                      log.type === 'opportunity' ? 'text-[#9333ea]' : // 🟣 Violet for opportunities
+                      log.type === 'SYSTEM' ? 'text-[#9333ea]' :     // 🟣 Violet for system
+                      log.type === 'success' ? 'text-[#9333ea]' :    // 🟣 Violet for success
                       log.type === 'error' ? 'text-[#ff0000]' :
-                      log.type === 'scan' ? 'text-[#ff9900]' :
-                      'text-gray-600'
+                      'text-white'
                     }>
                       {log.message}
                     </span>
@@ -256,21 +430,6 @@ export default function ArbitragePage() {
               </div>
             </div>
 
-            <div className="cyber-card p-6 bg-black/90 backdrop-blur-sm">
-              <h3 className="text-sm font-mono text-[#ff9900] mb-4 border-b border-[#ff9900]/30 pb-2">
-                SCANNER CONFIG
-              </h3>
-              <div className="space-y-2 font-mono text-xs text-gray-600">
-                <p>▸ API: JUPITER_V6_AGGREGATOR</p>
-                <p>▸ NETWORK: SOLANA_MAINNET_BETA</p>
-                <p>▸ TOKENS: 12_TOKENS_SCANNED</p>
-                <p>▸ ROUTES: MULTI_HOP_ENABLED</p>
-                <p>▸ AMOUNTS: 5_SIZES_PER_PAIR</p>
-                <p>▸ SLIPPAGE: 0.5%_TOLERANCE</p>
-                <p>▸ MIN_PROFIT: ${minProfit}_USD</p>
-                <p>▸ TOTAL_CHECKS: ~660_ROUTES</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

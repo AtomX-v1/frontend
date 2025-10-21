@@ -11,7 +11,7 @@ interface ArbitrageCardProps {
 }
 
 const DEX_COLORS: Record<string, string> = {
-  orca: '#00cc00',
+  orca: '#9333ea',
   raydium: '#ff9900',
   meteora: '#ff0000',
   jupiter: '#ffff00',
@@ -29,20 +29,20 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
   return (
     <div className={cn(
       "cyber-card p-4 transition-all duration-200",
-      expanded && "border-[#00cc00]"
+      expanded && "border-[#9333ea]"
     )}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-gray-600">PROFIT</span>
+              <span className="text-xs font-mono text-white">PROFIT</span>
               <span className="text-xl font-bold font-mono text-[#ffff00]">
                 ${opportunity.estimatedProfit.toFixed(4)}
               </span>
             </div>
             <div className={cn(
               "px-2 py-0.5 text-xs font-mono border",
-              isProfitable ? 'border-[#00cc00] text-[#00cc00]' : 'border-gray-600 text-gray-600'
+              isProfitable ? 'border-[#9333ea] text-[#9333ea]' : 'border-gray-600 text-white'
             )}>
               +{opportunity.profitPercentage.toFixed(2)}%
             </div>
@@ -50,7 +50,7 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
               {opportunity.path.length}H
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[10px] font-mono text-gray-600">
+          <div className="flex items-center gap-4 text-[10px] font-mono text-white">
             <span>ID: {opportunity.id.substring(0, 12)}</span>
             <span>AGE: {timeSince}s</span>
             <span>GAS: ${estimatedGas.toFixed(4)}</span>
@@ -60,7 +60,7 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
         <div className="flex gap-2">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="px-3 py-1 font-mono text-xs border border-gray-600 text-gray-600 hover:border-[#00cc00] hover:text-[#00cc00] transition-colors"
+            className="px-3 py-1 font-mono text-xs border border-gray-600 text-white hover:border-[#9333ea] hover:text-[#9333ea] transition-colors"
           >
             {expanded ? '[HIDE]' : '[INFO]'}
           </button>
@@ -71,7 +71,7 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
               "px-3 py-1 font-mono text-xs border transition-colors",
               isProfitable
                 ? "border-[#ffff00] text-[#ffff00] hover:bg-[#ffff00] hover:text-black"
-                : "border-gray-700 text-gray-600 cursor-not-allowed opacity-50"
+                : "border-gray-700 text-white cursor-not-allowed opacity-50"
             )}
           >
             [EXEC]
@@ -82,7 +82,7 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
       <div className="space-y-2 mb-4">
         {opportunity.path.map((step, index) => (
           <div key={index} className="flex items-center gap-2">
-            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center border border-gray-800 font-mono text-xs text-gray-600">
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center border border-gray-800 font-mono text-xs text-white">
               {index + 1}
             </div>
             <div
@@ -95,11 +95,11 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
               {step.dex.toUpperCase()}
             </div>
             <div className="flex-1 flex items-center gap-2 font-mono text-sm">
-              <span className="text-[#00cc00] font-bold">{step.from.symbol}</span>
+              <span className="text-[#9333ea] font-bold">{step.from.symbol}</span>
               <span className="text-gray-700">━━▸</span>
               <span className="text-[#ff9900] font-bold">{step.to.symbol}</span>
             </div>
-            <div className="text-xs font-mono text-gray-600">
+            <div className="text-xs font-mono text-white">
               {formatNumber(step.expectedOutput, 6)}
             </div>
           </div>
@@ -110,46 +110,46 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
         <div className="pt-4 mt-4 border-t border-gray-800 space-y-3 animate-fadeIn">
           <div className="grid grid-cols-2 gap-4 font-mono text-xs">
             <div className="space-y-2">
-              <div className="text-gray-600 text-[10px]">EXECUTION DETAILS</div>
+              <div className="text-white text-[10px]">EXECUTION DETAILS</div>
               <div className="flex justify-between">
-                <span className="text-gray-600">REQUIRED_CAPITAL</span>
-                <span className="text-[#00cc00]">${opportunity.requiredAmount.toFixed(2)}</span>
+                <span className="text-white">REQUIRED_CAPITAL</span>
+                <span className="text-[#9333ea]">${opportunity.requiredAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">EST_GAS_COST</span>
+                <span className="text-white">EST_GAS_COST</span>
                 <span className="text-[#ff9900]">${estimatedGas.toFixed(4)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">NET_PROFIT</span>
+                <span className="text-white">NET_PROFIT</span>
                 <span className="text-[#ffff00]">${netProfit.toFixed(4)}</span>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="text-gray-600 text-[10px]">RISK METRICS</div>
+              <div className="text-white text-[10px]">RISK METRICS</div>
               <div className="flex justify-between">
-                <span className="text-gray-600">SLIPPAGE_TOL</span>
-                <span className="text-[#00cc00]">{slippage}%</span>
+                <span className="text-white">SLIPPAGE_TOL</span>
+                <span className="text-[#9333ea]">{slippage}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">PRICE_IMPACT</span>
-                <span className={priceImpact < 0.1 ? 'text-[#00cc00]' : priceImpact < 0.2 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
+                <span className="text-white">PRICE_IMPACT</span>
+                <span className={priceImpact < 0.1 ? 'text-[#9333ea]' : priceImpact < 0.2 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                   {priceImpact.toFixed(3)}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">ROUTE_HOPS</span>
-                <span className="text-[#00cc00]">{opportunity.path.length}</span>
+                <span className="text-white">ROUTE_HOPS</span>
+                <span className="text-[#9333ea]">{opportunity.path.length}</span>
               </div>
             </div>
           </div>
 
           <div className="pt-3 border-t border-gray-800">
-            <div className="text-gray-600 text-[10px] mb-2">SWAP ROUTE</div>
-            <div className="font-mono text-[10px] text-gray-600 space-y-1">
+            <div className="text-white text-[10px] mb-2">SWAP ROUTE</div>
+            <div className="font-mono text-[10px] text-white space-y-1">
               {opportunity.path.map((step, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-gray-700">[{i + 1}]</span>
-                  <span className="text-[#00cc00]">{step.from.symbol}</span>
+                  <span className="text-[#9333ea]">{step.from.symbol}</span>
                   <span className="text-gray-700">→</span>
                   <span className="text-[#ff9900]">{step.to.symbol}</span>
                   <span className="text-gray-700">@</span>
@@ -165,7 +165,7 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
               READY_FOR_EXECUTION • {connected ? 'WALLET_CONNECTED' : 'CONNECT_WALLET_REQUIRED'}
             </div>
             <div className="text-[10px] font-mono">
-              <span className="text-gray-600">ROI:</span>{' '}
+              <span className="text-white">ROI:</span>{' '}
               <span className="text-[#ffff00]">{((netProfit / opportunity.requiredAmount) * 100).toFixed(2)}%</span>
             </div>
           </div>
@@ -174,16 +174,16 @@ export default function ArbitrageCard({ opportunity, onExecute, connected = fals
 
       <div className="pt-3 border-t border-gray-800 grid grid-cols-3 gap-4 font-mono text-xs">
         <div>
-          <div className="text-gray-600 text-[10px]">INPUT</div>
-          <div className="text-[#00cc00]">${opportunity.requiredAmount.toFixed(2)}</div>
+          <div className="text-white text-[10px]">INPUT</div>
+          <div className="text-[#9333ea]">${opportunity.requiredAmount.toFixed(2)}</div>
         </div>
         <div>
-          <div className="text-gray-600 text-[10px]">OUTPUT</div>
+          <div className="text-white text-[10px]">OUTPUT</div>
           <div className="text-[#ffff00]">${(opportunity.requiredAmount + netProfit).toFixed(2)}</div>
         </div>
         <div>
-          <div className="text-gray-600 text-[10px]">CONFIDENCE</div>
-          <div className={isProfitable ? 'text-[#00cc00]' : 'text-[#ff0000]'}>
+          <div className="text-white text-[10px]">CONFIDENCE</div>
+          <div className={isProfitable ? 'text-[#9333ea]' : 'text-[#ff0000]'}>
             {isProfitable ? 'HIGH' : 'LOW'}
           </div>
         </div>

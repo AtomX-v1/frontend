@@ -25,7 +25,7 @@ const config: Config = {
           blue: '#00f0ff',
           purple: '#bf00ff',
           pink: '#ff00ff',
-          green: '#00ff88',
+          green: '#9333ea',
         },
       },
       animation: {

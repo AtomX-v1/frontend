@@ -39,11 +39,11 @@ export default function Home() {
         <div className="cyber-card p-6">
           <div className="font-mono text-sm">
             {history.map((line, i) => (
-              <div key={i} className={line.startsWith('>') ? 'text-[#00cc00]' : 'text-gray-500'}>
+              <div key={i} className={line.startsWith('>') ? 'text-white' : 'text-gray-500'}>
                 {line}
               </div>
             ))}
-            <div className="flex items-center gap-2 text-[#00cc00]">
+            <div className="flex items-center gap-2 text-[#9333ea]">
               <span>&gt;</span>
               <input
                 type="text"
@@ -54,7 +54,7 @@ export default function Home() {
                     handleCommand(command);
                   }
                 }}
-                className="flex-1 bg-transparent outline-none border-none text-[#00cc00]"
+                className="flex-1 bg-transparent outline-none border-none text-[#9333ea]"
                 autoFocus
               />
               <span className="animate-pulse">█</span>

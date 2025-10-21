@@ -113,26 +113,26 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
       {index > 0 && (
         <div className="h-6 flex items-center justify-center">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-px bg-[#00cc00]" />
-            <div className="font-mono text-xs text-gray-600">
+            <div className="h-6 w-px bg-[#9333ea]" />
+            <div className="font-mono text-xs text-white">
               OUTPUT → INPUT [{index}]
             </div>
-            <div className="h-6 w-px bg-[#00cc00]" />
+            <div className="h-6 w-px bg-[#9333ea]" />
           </div>
         </div>
       )}
       <div className="flex items-center gap-3">
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing font-mono text-xl text-gray-600 hover:text-[#00cc00]">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing font-mono text-xl text-white hover:text-[#9333ea]">
           ⣿
         </div>
         <div className="flex-1 cyber-card p-4 bg-black/90">
           <div className="flex items-center justify-between mb-4">
-            <div className="font-mono text-xs text-gray-600">
+            <div className="font-mono text-xs text-white">
               STEP_{index + 1} // {cube.dex?.toUpperCase() || 'SELECT_DEX'}
             </div>
             <button
               onClick={onRemove}
-              className="text-gray-600 hover:text-[#ff0000] transition-colors font-mono text-xs"
+              className="text-white hover:text-[#ff0000] transition-colors font-mono text-xs"
             >
               [X]
             </button>
@@ -145,8 +145,8 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
                 onClick={() => onUpdate({ ...cube, dex: dex as any })}
                 className={`px-3 py-1 font-mono text-xs transition-colors border ${
                   cube.dex === dex
-                    ? 'border-[#00cc00] text-[#00cc00]'
-                    : 'border-gray-700 text-gray-600 hover:border-gray-500'
+                    ? 'border-[#9333ea] text-[#9333ea]'
+                    : 'border-gray-700 text-white hover:border-gray-500'
                 }`}
               >
                 {dex.toUpperCase()}
@@ -156,7 +156,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="text-xs text-gray-600 font-mono mb-1 block">
+              <label className="text-xs text-white font-mono mb-1 block">
                 {index === 0 ? 'INPUT_TOKEN' : 'AUTO_INPUT'}
               </label>
               {index === 0 ? (
@@ -166,7 +166,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
                     const token = COMMON_TOKENS.find((t) => t.symbol === e.target.value);
                     onUpdate({ ...cube, tokenIn: token });
                   }}
-                  className="w-full bg-black border border-[#00cc00]/30 px-3 py-2 text-[#00cc00] font-mono text-sm focus:outline-none focus:border-[#00cc00]"
+                  className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
                 >
                   <option value="">SELECT</option>
                   {COMMON_TOKENS.map((token) => (
@@ -183,7 +183,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
             </div>
 
             <div>
-              <label className="text-xs text-gray-600 font-mono mb-1 block">
+              <label className="text-xs text-white font-mono mb-1 block">
                 {index === 0 ? 'AMOUNT' : 'AUTO_AMOUNT'}
               </label>
               {index === 0 ? (
@@ -192,7 +192,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
                   value={cube.amountIn || ''}
                   onChange={(e) => onUpdate({ ...cube, amountIn: parseFloat(e.target.value) })}
                   placeholder="0.00"
-                  className="w-full bg-black border border-[#00cc00]/30 px-3 py-2 text-[#00cc00] font-mono text-sm focus:outline-none focus:border-[#00cc00]"
+                  className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
                 />
               ) : (
                 <div className="w-full bg-black border border-gray-700 px-3 py-2 text-gray-500 font-mono text-sm">
@@ -203,11 +203,11 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
           </div>
 
           <div className="flex justify-center mb-3">
-            <div className="font-mono text-xs text-gray-600">SWAP ↓</div>
+            <div className="font-mono text-xs text-white">SWAP ↓</div>
           </div>
 
           <div>
-            <label className="text-xs text-gray-600 font-mono mb-1 block">OUTPUT_TOKEN</label>
+            <label className="text-xs text-white font-mono mb-1 block">OUTPUT_TOKEN</label>
             <select
               value={cube.tokenOut?.symbol || ''}
               onChange={(e) => {
@@ -226,7 +226,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
           </div>
 
           {loading && (
-            <div className="mt-3 text-xs text-gray-600 font-mono border-t border-gray-800 pt-3">
+            <div className="mt-3 text-xs text-white font-mono border-t border-gray-800 pt-3">
               FETCHING_QUOTE...
             </div>
           )}
@@ -234,12 +234,12 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
           {estimatedOutput !== null && !loading && (
             <div className="mt-3 text-xs font-mono border-t border-gray-800 pt-3">
               <div className="flex justify-between mb-1">
-                <span className="text-gray-600">EST_OUTPUT</span>
+                <span className="text-white">EST_OUTPUT</span>
                 <span className="text-[#ff9900]">{formatNumber(estimatedOutput, 4)} {cube.tokenOut?.symbol}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">PRICE_IMPACT</span>
-                <span className={priceImpact > 1 ? 'text-[#ff0000]' : 'text-[#00cc00]'}>
+                <span className="text-white">PRICE_IMPACT</span>
+                <span className={priceImpact > 1 ? 'text-[#ff0000]' : 'text-[#9333ea]'}>
                   {priceImpact.toFixed(2)}%
                 </span>
               </div>
@@ -315,9 +315,7 @@ export default function ComboBuilder() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+  // Removed auto-scroll for logs
 
   useEffect(() => {
     const calculateOutputs = async () => {
@@ -485,7 +483,7 @@ export default function ComboBuilder() {
     <div className="min-h-screen p-4 md:p-6">
       <div className="max-w-[1800px] mx-auto">
         <div className="cyber-card p-6 mb-6 bg-black/90 backdrop-blur-sm">
-          <pre className="text-[11px] md:text-sm text-[#00cc00] leading-tight mb-4 overflow-x-auto">
+          <pre className="text-[11px] md:text-sm text-[#9333ea] leading-tight mb-4 overflow-x-auto">
 {`
  █████╗ ████████╗ ██████╗ ███╗   ███╗██╗  ██╗
 ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║╚██╗██╔╝
@@ -499,13 +497,13 @@ export default function ComboBuilder() {
           </pre>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="font-mono text-xs">
-              <span className="text-gray-600">NETWORK:</span>{' '}
-              <span className="text-[#00cc00]">SOLANA-MAINNET</span>
-              <span className="text-gray-600 ml-4">LATENCY:</span>{' '}
-              <span className={networkLatency < 200 ? 'text-[#00cc00]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
+              <span className="text-white">NETWORK:</span>{' '}
+              <span className="text-[#9333ea]">SOLANA-MAINNET</span>
+              <span className="text-white ml-4">LATENCY:</span>{' '}
+              <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                 {networkLatency}ms
               </span>
-              <span className="text-gray-600 ml-4">STEPS:</span>{' '}
+              <span className="text-white ml-4">STEPS:</span>{' '}
               <span className="text-[#ff9900]">{cubes.length}</span>
             </div>
             <div className="flex gap-3">
@@ -521,7 +519,7 @@ export default function ComboBuilder() {
               </button>
               <button
                 onClick={addCube}
-                className="border border-[#00cc00] px-4 py-2 text-[#00cc00] hover:bg-[#00cc00] hover:text-black transition-colors font-mono text-xs"
+                className="border border-[#9333ea] px-4 py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black transition-colors font-mono text-xs"
               >
                 [+ADD STEP]
               </button>
@@ -533,8 +531,8 @@ export default function ComboBuilder() {
           <div className="space-y-6">
             <div className="cyber-card p-6 bg-black/90 backdrop-blur-sm min-h-[600px]">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-sm font-mono text-[#00cc00]">TRANSACTION CHAIN [{cubes.length}]</h2>
-                <div className="text-xs font-mono text-gray-600">
+                <h2 className="text-sm font-mono text-[#9333ea]">TRANSACTION CHAIN [{cubes.length}]</h2>
+                <div className="text-xs font-mono text-white">
                   DRAG_TO_REORDER
                 </div>
               </div>
@@ -542,11 +540,11 @@ export default function ComboBuilder() {
               {cubes.length === 0 ? (
                 <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
                   <div className="text-center">
-                    <p className="text-gray-600 font-mono text-lg mb-2">NO_STEPS_CONFIGURED</p>
+                    <p className="text-white font-mono text-lg mb-2">NO_STEPS_CONFIGURED</p>
                     <p className="text-gray-700 font-mono text-sm mb-6">BUILD YOUR MULTI-STEP TRANSACTION</p>
                     <button
                       onClick={addCube}
-                      className="border border-[#00cc00] px-6 py-3 text-[#00cc00] hover:bg-[#00cc00] hover:text-black transition-colors font-mono text-sm"
+                      className="border border-[#9333ea] px-6 py-3 text-[#9333ea] hover:bg-[#9333ea] hover:text-black transition-colors font-mono text-sm"
                     >
                       [ADD FIRST STEP]
                     </button>
@@ -583,17 +581,17 @@ export default function ComboBuilder() {
                   <h3 className="text-xs font-mono text-[#ffff00] mb-3">FINAL OUTPUT</h3>
                   <div className="font-mono text-sm space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">STARTING_WITH</span>
-                      <span className="text-[#00cc00]">{initialInput.amountIn} {initialInput.tokenIn?.symbol}</span>
+                      <span className="text-white">STARTING_WITH</span>
+                      <span className="text-[#9333ea]">{initialInput.amountIn} {initialInput.tokenIn?.symbol}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">ENDING_WITH</span>
+                      <span className="text-white">ENDING_WITH</span>
                       <span className="text-[#ff9900]">{finalOutput.amount.toFixed(4)} {finalOutput.token.symbol}</span>
                     </div>
                     {profitLoss !== null && (
                       <div className="flex justify-between border-t border-gray-800 pt-2 mt-2">
-                        <span className="text-gray-600">PROFIT_LOSS</span>
-                        <span className={profitLoss > 0 ? 'text-[#00cc00]' : 'text-[#ff0000]'}>
+                        <span className="text-white">PROFIT_LOSS</span>
+                        <span className={profitLoss > 0 ? 'text-[#9333ea]' : 'text-[#ff0000]'}>
                           {profitLoss > 0 ? '+' : ''}{profitLoss.toFixed(2)}%
                         </span>
                       </div>
@@ -606,19 +604,19 @@ export default function ComboBuilder() {
 
           <div className="space-y-6">
             <div className="cyber-card p-4 bg-black/90 backdrop-blur-sm">
-              <h3 className="text-sm font-mono text-[#00cc00] mb-3 border-b border-[#00cc00]/30 pb-2 flex items-center justify-between">
+              <h3 className="text-sm font-mono text-[#9333ea] mb-3 border-b border-[#9333ea]/30 pb-2 flex items-center justify-between">
                 <span>SYSTEM LOGS</span>
-                <span className="text-gray-600">[LIVE]</span>
+                <span className="text-white">[LIVE]</span>
               </h3>
               <div className="h-80 overflow-y-auto space-y-1 font-mono text-[10px] custom-scrollbar">
                 {logs.map((log, i) => (
                   <div key={i} className="flex gap-2">
                     <span className="text-gray-700">[{log.timestamp}]</span>
                     <span className={
-                      log.type === 'success' ? 'text-[#00cc00]' :
+                      log.type === 'success' ? 'text-[#9333ea]' :
                       log.type === 'error' ? 'text-[#ff0000]' :
                       log.type === 'quote' ? 'text-[#ff9900]' :
-                      'text-gray-600'
+                      'text-white'
                     }>
                       {log.message}
                     </span>
@@ -634,22 +632,22 @@ export default function ComboBuilder() {
               </h3>
               <div className="space-y-3 font-mono text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">STEPS_QUEUED</span>
-                  <span className="text-[#00cc00]">{cubes.length}</span>
+                  <span className="text-white">STEPS_QUEUED</span>
+                  <span className="text-[#9333ea]">{cubes.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">VALID_CONFIG</span>
-                  <span className={isValidCombo ? 'text-[#00cc00]' : 'text-[#ff0000]'}>
+                  <span className="text-white">VALID_CONFIG</span>
+                  <span className={isValidCombo ? 'text-[#9333ea]' : 'text-[#ff0000]'}>
                     {isValidCombo ? '[YES]' : '[NO]'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">EST_GAS</span>
+                  <span className="text-white">EST_GAS</span>
                   <span className="text-gray-500">~{(cubes.length * 0.002).toFixed(3)} SOL</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">WALLET</span>
-                  <span className={connected ? 'text-[#00cc00]' : 'text-[#ff0000]'}>
+                  <span className="text-white">WALLET</span>
+                  <span className={connected ? 'text-[#9333ea]' : 'text-[#ff0000]'}>
                     {connected ? '[CONNECTED]' : '[DISCONNECTED]'}
                   </span>
                 </div>
@@ -663,7 +661,7 @@ export default function ComboBuilder() {
                 {isExecuting ? '[BUILDING TX...]' : connected ? '[EXECUTE COMBO]' : '[SIMULATE EXECUTION]'}
               </button>
               {!connected && isValidCombo && (
-                <div className="mt-2 text-xs font-mono text-gray-600 text-center">
+                <div className="mt-2 text-xs font-mono text-white text-center">
                   SIMULATION MODE - CONNECT WALLET TO EXECUTE
                 </div>
               )}
@@ -673,7 +671,7 @@ export default function ComboBuilder() {
               <h3 className="text-xs font-mono text-[#ffff00] mb-3 border-b border-[#ffff00]/30 pb-2">
                 SYSTEM CONFIG
               </h3>
-              <div className="space-y-2 font-mono text-xs text-gray-600">
+              <div className="space-y-2 font-mono text-xs text-white">
                 <p>▸ PROTOCOL: JUPITER_V6_AGGREGATOR</p>
                 <p>▸ DEXES: ORCA // RAYDIUM // METEORA</p>
                 <p>▸ MAX_STEPS: UNLIMITED</p>

@@ -4,12 +4,12 @@
 
 @layer base {
   * {
-    border-color: rgba(0, 204, 0, 0.3);
+    border-color: rgba(147, 51, 234, 0.3);
   }
 
   body {
     background: #000;
-    color: #00cc00;
+    color: #9333ea;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
     overflow-x: hidden;
   }
@@ -21,7 +21,7 @@
     background: repeating-linear-gradient(
       0deg,
       transparent 0px,
-      rgba(0, 204, 0, 0.02) 1px,
+      rgba(147, 51, 234, 0.02) 1px,
       transparent 2px
     );
     pointer-events: none;
@@ -44,18 +44,18 @@
   .cyber-card {
     position: relative;
     background: #000;
-    border: 1px solid #00cc00;
+    border: 1px solid #9333ea;
     transition: border-color 0.2s ease;
-    box-shadow: 0 0 10px rgba(0, 204, 0, 0.1);
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.1);
   }
 
   .cyber-card:hover {
-    border-color: #00cc00;
-    box-shadow: 0 0 20px rgba(0, 204, 0, 0.2);
+    border-color: #9333ea;
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.2);
   }
 
   .holo-bg {
-    color: #00cc00;
+    color: #9333ea;
   }
 
   .cube-container {
@@ -79,11 +79,11 @@
   .terminal-cursor::after {
     content: '█';
     animation: blink 0.8s infinite;
-    color: #00cc00;
+    color: #9333ea;
   }
 
   .neon-green {
-    color: #00cc00;
+    color: #9333ea;
   }
 
   .neon-orange {
@@ -105,21 +105,21 @@
 
   .custom-scrollbar::-webkit-scrollbar-track {
     background: #000;
-    border: 1px solid #00cc00;
+    border: 1px solid #9333ea;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #00cc00;
+    background: #9333ea;
     border: 1px solid #000;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #00ff00;
+    background: #9333ea;
   }
 
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #00cc00 #000;
+    scrollbar-color: #9333ea #000;
   }
 
   @keyframes fadeIn {
@@ -139,10 +139,10 @@
 
   @keyframes pulse-green {
     0%, 100% {
-      box-shadow: 0 0 5px rgba(0, 204, 0, 0.5);
+      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
     }
     50% {
-      box-shadow: 0 0 20px rgba(0, 204, 0, 0.8);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.8);
     }
   }
 
@@ -172,7 +172,7 @@
     background: linear-gradient(
       to bottom,
       transparent,
-      rgba(0, 204, 0, 0.8),
+      rgba(147, 51, 234, 0.8),
       transparent
     );
     animation: scan-line 4s linear infinite;
@@ -215,8 +215,8 @@
 
   .border-glow {
     box-shadow:
-      0 0 5px rgba(0, 204, 0, 0.5),
-      inset 0 0 5px rgba(0, 204, 0, 0.2);
+      0 0 5px rgba(147, 51, 234, 0.5),
+      inset 0 0 5px rgba(147, 51, 234, 0.2);
   }
 
   .border-glow-orange {
@@ -242,7 +242,7 @@
   }
 
   .text-shadow-green {
-    text-shadow: 0 0 10px rgba(0, 204, 0, 0.5);
+    text-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
   }
 
   .text-shadow-orange {
