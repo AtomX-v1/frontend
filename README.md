@@ -510,7 +510,7 @@ export function MatrixRain() {
 }
 ```
 
-### Error Handling
+### Error 
 
 #### Transaction Failures
 
@@ -633,7 +633,7 @@ if (!signTransaction) {
 
 #### Production URL
 
-`https://atomx-frontend-b1xkydqs3-shaygps-projects.vercel.app`
+`[https://atomx-frontend-b1xkydqs3-shaygps-projects.vercel.app](https://atomx-frontend.vercel.app/)`
 
 ### Monitoring
 
