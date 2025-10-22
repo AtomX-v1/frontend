@@ -438,10 +438,10 @@ export default function ArbitragePage() {
 
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
+    <div className="min-h-screen p-2 sm:p-4 md:p-6">
       <div className="max-w-[1800px] mx-auto">
-        <div className="cyber-card p-6 mb-6 bg-black/90 backdrop-blur-sm">
-          <pre className="text-[11px] md:text-sm text-[#9333ea] leading-tight mb-4 overflow-x-auto">
+        <div className="cyber-card p-3 sm:p-4 md:p-6 mb-4 md:mb-6 bg-black/90 backdrop-blur-sm">
+          <pre className="text-[8px] xs:text-[9px] sm:text-[11px] md:text-sm text-[#9333ea] leading-tight mb-2 sm:mb-4 overflow-x-auto">
 {`
  █████╗ ████████╗ ██████╗ ███╗   ███╗██╗  ██╗
 ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║╚██╗██╔╝
@@ -453,23 +453,31 @@ export default function ArbitragePage() {
       MAINNET ARBITRAGE SCANNER // EXECUTION PROTOCOL
 `}
           </pre>
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="font-mono text-xs">
-              <span className="text-white">NETWORK:</span>{' '}
-              <span className="text-[#9333ea]">SOLANA-DEVNET</span>
-              <span className="text-white ml-4">LATENCY:</span>{' '}
-              <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
-                {networkLatency}ms
-              </span>
-              <span className="text-white ml-4">SCANS:</span>{' '}
-              <span className="text-[#ff9900]">{scanCount}</span>
+          <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
+            <div className="font-mono text-[10px] sm:text-xs">
+              <div className="flex flex-wrap gap-1 sm:gap-4">
+                <span>
+                  <span className="text-white">NETWORK:</span>{' '}
+                  <span className="text-[#9333ea]">SOLANA-DEVNET</span>
+                </span>
+                <span>
+                  <span className="text-white">LATENCY:</span>{' '}
+                  <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
+                    {networkLatency}ms
+                  </span>
+                </span>
+                <span>
+                  <span className="text-white">SCANS:</span>{' '}
+                  <span className="text-[#ff9900]">{scanCount}</span>
+                </span>
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               {scanner.connected && scanner.isRunning ? (
                 <button
                   onClick={handleStopScanning}
                   disabled={loading}
-                  className="border border-[#ff0000] px-4 py-2 text-[#ff0000] hover:bg-[#ff0000] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
+                  className="border border-[#ff0000] px-2 sm:px-4 py-1 sm:py-2 text-[#ff0000] hover:bg-[#ff0000] hover:text-black disabled:opacity-30 transition-colors font-mono text-[10px] sm:text-xs"
                 >
                   {loading ? '[STOPPING...]' : '[STOP SCANNER]'}
                 </button>
@@ -477,7 +485,7 @@ export default function ArbitragePage() {
                 <button
                   onClick={scanner.connected ? handleStartScanning : handleRefresh}
                   disabled={loading}
-                  className="border border-[#9333ea] px-4 py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
+                  className="border border-[#9333ea] px-2 sm:px-4 py-1 sm:py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 transition-colors font-mono text-[10px] sm:text-xs"
                 >
                   {loading ? '[SCANNING...]' : scanner.connected ? '[START SCANNER]' : '[SCAN NOW]'}
                 </button>
@@ -486,52 +494,52 @@ export default function ArbitragePage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_400px] gap-6">
-          <div className="space-y-6">
-            <div className="cyber-card p-6 bg-black/90 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="font-mono text-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 md:gap-6">
+          <div className="space-y-4 md:space-y-6">
+            <div className="cyber-card p-3 sm:p-4 md:p-6 bg-black/90 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="font-mono text-xs sm:text-sm">
                   <span className="text-[#9333ea]">LIVE SCANNER ACTIVITY</span>
                   <span className="text-white ml-2">[{scannerLogs.length}]</span>
                 </div>
               </div>
 
               {loading ? (
-                <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-3 border-[#9333ea] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-white font-mono text-lg">SCANNING LIQUIDITY POOLS...</p>
-                    <p className="text-gray-700 font-mono text-xs mt-2">CHECKING 64 TOKEN PAIRS</p>
+                <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 border-2 border-dashed border-gray-800">
+                  <div className="text-center px-4">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 border-3 border-[#9333ea] border-t-transparent rounded-full animate-spin mx-auto mb-2 sm:mb-4" />
+                    <p className="text-white font-mono text-sm sm:text-lg">SCANNING LIQUIDITY POOLS...</p>
+                    <p className="text-gray-700 font-mono text-[10px] sm:text-xs mt-1 sm:mt-2">CHECKING 64 TOKEN PAIRS</p>
                   </div>
                 </div>
               ) : !enableScan && !scanner.isRunning ? (
-                <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
-                  <div className="text-center">
-                    <p className="text-white font-mono text-lg mb-4">SCANNER READY</p>
-                    <p className="text-gray-700 font-mono text-sm mb-6">CLICK [START SCANNER] TO BEGIN LIVE SCANNING</p>
+                <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 border-2 border-dashed border-gray-800">
+                  <div className="text-center px-4">
+                    <p className="text-white font-mono text-sm sm:text-lg mb-2 sm:mb-4">SCANNER READY</p>
+                    <p className="text-gray-700 font-mono text-xs sm:text-sm mb-4 sm:mb-6">CLICK [START SCANNER] TO BEGIN LIVE SCANNING</p>
                     <button
                       onClick={scanner.connected ? handleStartScanning : handleRefresh}
-                      className="border border-[#9333ea] px-6 py-3 text-[#9333ea] hover:bg-[#9333ea] hover:text-black transition-colors font-mono text-sm"
+                      className="border border-[#9333ea] px-3 sm:px-6 py-2 sm:py-3 text-[#9333ea] hover:bg-[#9333ea] hover:text-black transition-colors font-mono text-xs sm:text-sm"
                     >
                       {scanner.connected ? '[START SCANNER API]' : '[START SCANNING]'}
                     </button>
                   </div>
                 </div>
               ) : scannerLogs.length === 0 ? (
-                <div className="flex items-center justify-center h-96 border-2 border-dashed border-gray-800">
-                  <div className="text-center">
-                    <p className="text-white font-mono text-lg mb-2">WAITING_FOR_SCANNER_LOGS</p>
-                    <p className="text-gray-700 font-mono text-sm">SCANNER RUNNING - LOGS WILL APPEAR HERE</p>
-                    <p className="text-gray-800 font-mono text-xs mt-4">REAL-TIME SCANNER ACTIVITY</p>
+                <div className="flex items-center justify-center h-64 sm:h-80 md:h-96 border-2 border-dashed border-gray-800">
+                  <div className="text-center px-4">
+                    <p className="text-white font-mono text-sm sm:text-lg mb-1 sm:mb-2">WAITING_FOR_SCANNER_LOGS</p>
+                    <p className="text-gray-700 font-mono text-xs sm:text-sm">SCANNER RUNNING - LOGS WILL APPEAR HERE</p>
+                    <p className="text-gray-800 font-mono text-[10px] sm:text-xs mt-2 sm:mt-4">REAL-TIME SCANNER ACTIVITY</p>
                   </div>
                 </div>
               ) : (
-                <div className="h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-                  <div className="space-y-2 font-mono text-[16px] leading-relaxed tracking-wider" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
+                <div className="h-[400px] sm:h-[600px] md:h-[800px] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                  <div className="space-y-1 sm:space-y-2 font-mono text-[12px] sm:text-[14px] md:text-[16px] leading-relaxed tracking-wider" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
                     {scannerLogs.map((log, i) => (
-                      <div key={i} className="flex gap-3 p-3 hover:bg-gray-900/50 transition-colors border-l-2 border-gray-800">
-                        <span className="text-gray-400 flex-shrink-0 font-mono text-[12px]">[{log.timestamp}]</span>
-                        <span className="text-white font-mono text-[16px] flex-1" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
+                      <div key={i} className="flex gap-1 sm:gap-3 p-1 sm:p-3 hover:bg-gray-900/50 transition-colors border-l-2 border-gray-800">
+                        <span className="text-gray-400 flex-shrink-0 font-mono text-[9px] sm:text-[10px] md:text-[12px]">[{log.timestamp}]</span>
+                        <span className="text-white font-mono text-[12px] sm:text-[14px] md:text-[16px] flex-1 break-words" style={{ fontFamily: 'Consolas, "Courier New", monospace' }}>
                           {log.message}
                         </span>
                       </div>
@@ -542,9 +550,9 @@ export default function ArbitragePage() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="cyber-card p-4 bg-black/90 backdrop-blur-sm">
-              <h3 className="text-sm font-mono text-[#9333ea] mb-3 border-b border-[#9333ea]/30 pb-2 flex items-center justify-between">
+          <div className="space-y-4 md:space-y-6">
+            <div className="cyber-card p-2 sm:p-3 md:p-4 bg-black/90 backdrop-blur-sm">
+              <h3 className="text-xs sm:text-sm font-mono text-[#9333ea] mb-2 sm:mb-3 border-b border-[#9333ea]/30 pb-1 sm:pb-2 flex items-center justify-between">
                 <span>OPPORTUNITY ALERTS</span>
                 <span className="text-white">[{opportunityAlerts.length}]</span>
               </h3>
@@ -556,17 +564,21 @@ export default function ArbitragePage() {
                     // Filter opportunities with profit > 0 and remove duplicates
                     const filteredOpportunities = opportunityAlerts
                       .filter((opportunity) => {
+                        // Check for profit > 0 in multiple fields
                         const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
-                        return spreadPercent > 0;
+                        const profitUSD = opportunity.profitUSD ? parseFloat(opportunity.profitUSD.replace('$', '')) : 0;
+                        return spreadPercent > 0 || profitUSD > 0;
                       })
                       .filter((opportunity, index, arr) => {
-                        // Remove duplicates based on tokenPair and similar profit margins
+                        // Remove duplicates - but less aggressively (allow 1% difference instead of 0.1%)
                         return arr.findIndex(op => {
                           const sameTokenPair = op.tokenPair === opportunity.tokenPair;
-                          const similarProfit = Math.abs(
-                            parseFloat(op.priceSpread?.replace('%', '') || '0') - 
-                            parseFloat(opportunity.priceSpread?.replace('%', '') || '0')
-                          ) < 0.1; // Consider similar if within 0.1% difference
+                          if (!sameTokenPair) return false;
+                          
+                          const currentProfit = parseFloat(opportunity.priceSpread?.replace('%', '') || '0');
+                          const compareProfit = parseFloat(op.priceSpread?.replace('%', '') || '0');
+                          const similarProfit = Math.abs(currentProfit - compareProfit) < 1.0; // 1% difference instead of 0.1%
+                          
                           return sameTokenPair && similarProfit;
                         }) === index;
                       });
@@ -581,13 +593,13 @@ export default function ArbitragePage() {
                     return (
                       <>
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-mono text-[#ffff00] mb-2">
+                          <h4 className="text-[10px] sm:text-xs font-mono text-[#ffff00] mb-1 sm:mb-2">
                             ARBITRAGE OPPORTUNITIES [{filteredOpportunities.length}]
                           </h4>
                           {hasMore && (
                             <button
                               onClick={() => setShowAllOpportunities(!showAllOpportunities)}
-                              className="text-xs font-mono text-[#9333ea] hover:text-white transition-colors"
+                              className="text-[10px] sm:text-xs font-mono text-[#9333ea] hover:text-white transition-colors"
                             >
                               {showAllOpportunities ? '[SHOW LESS]' : '[VIEW MORE]'}
                             </button>
@@ -599,18 +611,18 @@ export default function ArbitragePage() {
                     const estimatedProfitUSD = spreadPercent > 0 ? (1000 * (spreadPercent / 100)).toFixed(2) : '0.00';
                     
                     return (
-                      <div key={opportunity.id} className="border border-[#9333ea]/30 p-4 bg-black/50 rounded-sm">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="text-[#9333ea] font-mono text-xs mb-1">[{opportunity.timestamp}] ARBITRAGE DETECTED</div>
-                            <div className="text-[#ffff00] font-mono text-sm font-bold">
+                      <div key={opportunity.id} className="border border-[#9333ea]/30 p-2 sm:p-3 md:p-4 bg-black/50 rounded-sm">
+                        <div className="flex flex-col sm:flex-row items-start justify-between mb-2 sm:mb-3 gap-2">
+                          <div className="flex-1">
+                            <div className="text-[#9333ea] font-mono text-[9px] sm:text-xs mb-1">[{opportunity.timestamp}] ARBITRAGE DETECTED</div>
+                            <div className="text-[#ffff00] font-mono text-xs sm:text-sm font-bold">
                               {opportunity.tokenPair || 'SOL/USDC'} • Est. ${estimatedProfitUSD} profit
                             </div>
                           </div>
                           <button
                             onClick={() => handleExecuteArbitrage(opportunity.id)}
                             disabled={!opportunity.isExecutable}
-                            className={`px-4 py-2 text-xs font-mono border transition-colors ${
+                            className={`px-2 sm:px-4 py-1 sm:py-2 text-[9px] sm:text-xs font-mono border transition-colors w-full sm:w-auto ${
                               opportunity.isExecutable
                                 ? 'border-[#00ff00] text-[#00ff00] hover:bg-[#00ff00] hover:text-black'
                                 : 'border-gray-600 text-gray-600 cursor-not-allowed'
@@ -620,11 +632,11 @@ export default function ArbitragePage() {
                           </button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3 font-mono text-[10px]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 font-mono text-[9px] sm:text-[10px]">
                           {opportunity.priceSpread && (
                             <div className="space-y-1">
                               <span className="text-gray-400 block">PROFIT MARGIN</span>
-                              <span className="text-[#00ff00] font-bold text-sm">{opportunity.priceSpread}</span>
+                              <span className="text-[#00ff00] font-bold text-xs sm:text-sm">{opportunity.priceSpread}</span>
                             </div>
                           )}
                           <div className="space-y-1">
@@ -634,19 +646,19 @@ export default function ArbitragePage() {
                           {opportunity.forwardRate && (
                             <div className="space-y-1">
                               <span className="text-gray-400 block">FORWARD RATE</span>
-                              <span className="text-white">{opportunity.forwardRate}</span>
+                              <span className="text-white text-xs">{opportunity.forwardRate}</span>
                             </div>
                           )}
                           {opportunity.reverseRate && (
                             <div className="space-y-1">
                               <span className="text-gray-400 block">REVERSE RATE</span>
-                              <span className="text-white">{opportunity.reverseRate}</span>
+                              <span className="text-white text-xs">{opportunity.reverseRate}</span>
                             </div>
                           )}
                         </div>
                         
-                        <div className="mt-3 pt-2 border-t border-[#9333ea]/20">
-                          <div className="flex justify-between items-center font-mono text-[9px] text-gray-400">
+                        <div className="mt-2 sm:mt-3 pt-1 sm:pt-2 border-t border-[#9333ea]/20">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center font-mono text-[8px] sm:text-[9px] text-gray-400 gap-1 sm:gap-0">
                             <span>ROUTE: Jupiter Aggregator</span>
                             <span>GAS: ~0.005 SOL</span>
                             <span>SLIPPAGE: 0.5%</span>
@@ -662,18 +674,18 @@ export default function ArbitragePage() {
               )}
               
               {/* System Logs */}
-              <div className="h-64 overflow-y-auto space-y-1 font-mono text-[10px] custom-scrollbar">
-                <h4 className="text-xs font-mono text-gray-400 mb-2 border-t border-gray-800 pt-2">SYSTEM LOGS</h4>
+              <div className="h-48 sm:h-56 md:h-64 overflow-y-auto space-y-1 font-mono text-[9px] sm:text-[10px] custom-scrollbar">
+                <h4 className="text-[10px] sm:text-xs font-mono text-gray-400 mb-1 sm:mb-2 border-t border-gray-800 pt-1 sm:pt-2">SYSTEM LOGS</h4>
                 {logs.map((log, i) => (
-                  <div key={i} className="flex gap-2">
-                    <span className="text-gray-700">[{log.timestamp}]</span>
-                    <span className={
+                  <div key={i} className="flex gap-1 sm:gap-2">
+                    <span className="text-gray-700 text-[8px] sm:text-[9px]">[{log.timestamp}]</span>
+                    <span className={`${
                       log.type === 'opportunity' ? 'text-[#9333ea]' : // 🟣 Violet for opportunities
                       log.type === 'SYSTEM' ? 'text-[#9333ea]' :     // 🟣 Violet for system
                       log.type === 'success' ? 'text-[#9333ea]' :    // 🟣 Violet for success
                       log.type === 'error' ? 'text-[#ff0000]' :
                       'text-white'
-                    }>
+                    } break-words`}>
                       {log.message}
                     </span>
                   </div>

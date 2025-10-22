@@ -8,6 +8,12 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '375px',
+        'iPhone': '390px',
+        'iPad': '768px',
+        'iPad-pro': '1024px',
+      },
       colors: {
         primary: {
           50: '#f0f9ff',

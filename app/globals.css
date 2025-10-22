@@ -49,6 +49,28 @@
     box-shadow: 0 0 10px rgba(147, 51, 234, 0.1);
   }
 
+  /* Mobile-specific responsive utilities */
+  @media (max-width: 640px) {
+    .cyber-card {
+      box-shadow: 0 0 5px rgba(147, 51, 234, 0.1);
+    }
+    
+    .cyber-card:hover {
+      box-shadow: 0 0 10px rgba(147, 51, 234, 0.15);
+    }
+  }
+
+  /* Ensure text doesn't overflow on small screens */
+  @media (max-width: 480px) {
+    .cyber-card {
+      overflow-x: hidden;
+    }
+    
+    body {
+      font-size: 12px;
+    }
+  }
+
   .cyber-card:hover {
     border-color: #9333ea;
     box-shadow: 0 0 20px rgba(147, 51, 234, 0.2);
