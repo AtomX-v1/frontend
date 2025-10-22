@@ -31,7 +31,7 @@ interface OpportunityAlert {
 
 export default function ArbitragePage() {
   const connected = false;
-  const [minProfit, setMinProfit] = useState(-10);
+  const [minProfit] = useState(-10);
   const [enableScan, setEnableScan] = useState(false);
   const { opportunities: fallbackOpportunities, loading: fallbackLoading, refresh } = useArbitrage(minProfit, enableScan);
   
@@ -527,8 +527,17 @@ export default function ArbitragePage() {
               {/* Structured Arbitrage Opportunities */}
               {opportunityAlerts.length > 0 && (
                 <div className="mb-4 space-y-3">
-                  <h4 className="text-xs font-mono text-[#ffff00] mb-2">ARBITRAGE OPPORTUNITIES [{opportunityAlerts.length}]</h4>
-                  {opportunityAlerts.map((opportunity) => {
+                  <h4 className="text-xs font-mono text-[#ffff00] mb-2">ARBITRAGE OPPORTUNITIES [{opportunityAlerts.filter(op => {
+                    const spreadPercent = op.priceSpread ? parseFloat(op.priceSpread.replace('%', '')) : 0;
+                    return spreadPercent > 0;
+                  }).length}]</h4>
+                  {opportunityAlerts
+                    .filter((opportunity) => {
+                      // Filter opportunities with profit > 0
+                      const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
+                      return spreadPercent > 0;
+                    })
+                    .map((opportunity) => {
                     // Calculate estimated profit in USD based on price spread
                     const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
                     const estimatedProfitUSD = spreadPercent > 0 ? (1000 * (spreadPercent / 100)).toFixed(2) : '0.00';
