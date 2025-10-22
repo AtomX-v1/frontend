@@ -62,7 +62,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const inputAmount = index === 0 ? cube.amountIn : previousOutput?.amount;
+  const inputAmount = cube.amountIn || (index > 0 ? previousOutput?.amount : undefined);
   const inputToken = index === 0 ? cube.tokenIn : previousOutput?.token;
 
   useEffect(() => {
@@ -70,7 +70,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
       onUpdate({
         ...cube,
         tokenIn: previousOutput.token,
-        amountIn: previousOutput.amount
+        amountIn: cube.amountIn || previousOutput.amount
       });
     }
   }, [previousOutput, index]);
@@ -185,21 +185,15 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
 
             <div>
               <label className="text-xs text-white font-mono mb-1 block">
-                {index === 0 ? 'AMOUNT' : 'AUTO_AMOUNT'}
+                AMOUNT
               </label>
-              {index === 0 ? (
-                <input
-                  type="number"
-                  value={cube.amountIn || ''}
-                  onChange={(e) => onUpdate({ ...cube, amountIn: parseFloat(e.target.value) })}
-                  placeholder="0.00"
-                  className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
-                />
-              ) : (
-                <div className="w-full bg-black border border-gray-700 px-3 py-2 text-gray-500 font-mono text-sm">
-                  {inputAmount?.toFixed(4) || '0.00'}
-                </div>
-              )}
+              <input
+                type="number"
+                value={cube.amountIn || ''}
+                onChange={(e) => onUpdate({ ...cube, amountIn: parseFloat(e.target.value) })}
+                placeholder={index > 0 ? (previousOutput?.amount?.toFixed(4) || '0.00') : '0.00'}
+                className="w-full bg-black border border-[#9333ea]/30 px-3 py-2 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
+              />
             </div>
           </div>
 
