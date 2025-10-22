@@ -340,7 +340,8 @@ export default function ArbitragePage() {
       try {
         // Use scanner API health check if available, otherwise fallback to Jupiter
         if (scanner.connected) {
-          await fetch('http://localhost:3002/health');
+          const apiUrl = process.env.NEXT_PUBLIC_SCANNER_API_URL || 'http://localhost:3002';
+          await fetch(`${apiUrl}/health`);
         } else {
           await fetch('https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&onlyDirectRoutes=true', {
             mode: 'cors'
