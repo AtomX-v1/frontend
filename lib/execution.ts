@@ -223,9 +223,9 @@ export async function createArbitrageExecutionTransaction(
     ],
     data: Buffer.concat([
       EXECUTE_ARBITRAGE_DISCRIMINATOR, // execute_arbitrage discriminator
-      new BN(jupiterInstructionData.length).toArray('le', 4), // Data length as u32
+      Uint8Array.from(new BN(jupiterInstructionData.length).toArray('le', 4)), // Data length as u32
       jupiterInstructionData, // Jupiter instruction data
-      new BN(Math.floor(minProfit * 1e9)).toArray('le', 8), // Min profit in lamports as u64
+      Uint8Array.from(new BN(Math.floor(minProfit * 1e9)).toArray('le', 8)), // Min profit in lamports as u64
     ]),
   });
 
