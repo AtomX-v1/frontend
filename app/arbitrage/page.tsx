@@ -5,6 +5,8 @@ import ArbitrageCard from '@/components/ArbitrageCard';
 import { ArbitrageOpportunity } from '@/types';
 import { useArbitrage } from '@/hooks/useArbitrage';
 import { useScanner } from '@/hooks/useScanner';
+import { executeArbitrage } from '@/lib/execution';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface LogEntry {
   timestamp: string;
@@ -30,6 +32,7 @@ interface OpportunityAlert {
 }
 
 export default function ArbitragePage() {
+  const { connected, publicKey } = useWallet();
   const [minProfit] = useState(-10);
   const [enableScan, setEnableScan] = useState(false);
   const { opportunities: fallbackOpportunities, loading: fallbackLoading, refresh } = useArbitrage(minProfit, enableScan);
@@ -221,6 +224,11 @@ export default function ArbitragePage() {
     const opportunity = opportunityAlerts.find(op => op.id === opportunityId);
     if (!opportunity) return;
 
+    if (!connected || !publicKey) {
+      addLog('error', 'WALLET NOT CONNECTED - CONNECT PHANTOM WALLET TO EXECUTE');
+      return;
+    }
+
     addLog('info', `EXECUTING ARBITRAGE [${opportunity.timestamp}] - PROFIT: ${opportunity.priceSpread || 'N/A'}`);
     
     // Mark opportunity as non-executable during execution
@@ -233,11 +241,33 @@ export default function ArbitragePage() {
     );
 
     try {
-      // TODO: Connect to smart contract execution
-      // For now, simulate execution
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Calculate minimum profit in SOL (convert from percentage)
+      const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
+      const minProfitSOL = spreadPercent > 0 ? (0.1 * (spreadPercent / 100)) : 0.01; // Minimum 0.01 SOL profit
+      
+      addLog('info', 'BUILDING ARBITRAGE TRANSACTION VIA VAULT CONTRACT');
+      addLog('info', `MIN PROFIT REQUIRED: ${minProfitSOL.toFixed(4)} SOL`);
+      
+      // Create mock Jupiter instruction data for arbitrage
+      // In real implementation, this would come from the scanner
+      const mockJupiterData = Buffer.from([1, 2, 3, 4]); // Placeholder
+      
+      // Execute arbitrage via vault contract
+      const signature = await executeArbitrage(
+        publicKey,
+        mockJupiterData,
+        minProfitSOL,
+        async (transaction) => {
+          if (!window.solana) {
+            throw new Error('Phantom wallet not found');
+          }
+          return await window.solana.signTransaction(transaction);
+        }
+      );
       
       addLog('success', `ARBITRAGE EXECUTED SUCCESSFULLY - ID: ${opportunityId.slice(-8)}`);
+      addLog('info', `TRANSACTION: ${signature}`);
+      addLog('info', `VIEW ON EXPLORER: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
       
       // Remove executed opportunity after 5 seconds
       setTimeout(() => {
@@ -246,6 +276,7 @@ export default function ArbitragePage() {
       
     } catch (error) {
       addLog('error', `ARBITRAGE EXECUTION FAILED - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Arbitrage execution error:', error);
       
       // Re-enable execution on failure
       setOpportunityAlerts(prev => 
@@ -421,7 +452,7 @@ export default function ArbitragePage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="font-mono text-xs">
               <span className="text-white">NETWORK:</span>{' '}
-              <span className="text-[#9333ea]">SOLANA-MAINNET</span>
+              <span className="text-[#9333ea]">SOLANA-DEVNET</span>
               <span className="text-white ml-4">LATENCY:</span>{' '}
               <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                 {networkLatency}ms

@@ -6,6 +6,8 @@ import { COMMON_TOKENS } from '@/lib/constants';
 import { generateId, formatNumber } from '@/lib/utils';
 import { getJupiterQuote } from '@/lib/jupiter';
 import { useWallet } from '@/contexts/WalletContext';
+import { executeComboSwaps, SwapParams } from '@/lib/execution';
+import { JupiterUltraService } from '@/lib/jupiterUltra';
 import {
   DndContext,
   closestCenter,
@@ -250,6 +252,7 @@ export default function ComboBuilder() {
   const { connected, publicKey } = useWallet();
   const [cubes, setCubes] = useState<SwapCubeType[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [bootComplete, setBootComplete] = useState(false);
   const [outputs, setOutputs] = useState<StepOutput[]>([]);
@@ -385,71 +388,148 @@ export default function ComboBuilder() {
     }
   };
 
+  const simulateCombo = async () => {
+    if (!isValidCombo) {
+      addLog('error', 'INVALID COMBO CONFIGURATION');
+      return;
+    }
+
+    setIsSimulating(true);
+    addLog('info', `SIMULATING ${cubes.length}-STEP COMBO ON MAINNET`);
+    addLog('info', 'FETCHING REAL JUPITER QUOTES FROM MAINNET...');
+
+    try {
+      let currentAmount = cubes[0].amountIn!;
+      let currentToken = cubes[0].tokenIn!;
+      const simulationResults = [];
+
+      for (let i = 0; i < cubes.length; i++) {
+        const cube = cubes[i];
+        addLog('info', `SIMULATING STEP ${i + 1}: ${currentToken.symbol} → ${cube.tokenOut!.symbol}`);
+
+        try {
+          // Use Jupiter Ultra API for simulation - same as backend scanner
+          const amountInLamports = Math.floor(currentAmount * Math.pow(10, currentToken.decimals));
+          const ultraOrder = await JupiterUltraService.getQuote(
+            currentToken.mint,
+            cube.tokenOut!.mint,
+            amountInLamports,
+            50
+          );
+
+          if (ultraOrder) {
+            const outputAmount = parseInt(ultraOrder.outAmount) / Math.pow(10, cube.tokenOut!.decimals);
+            const priceImpact = parseFloat(ultraOrder.priceImpactPct || '0');
+            const dexPath = ultraOrder.routePlan.map(r => r.swapInfo.label).join(' → ');
+            
+            simulationResults.push({
+              step: i + 1,
+              inputToken: currentToken.symbol,
+              outputToken: cube.tokenOut!.symbol,
+              inputAmount: currentAmount,
+              outputAmount,
+              priceImpact: Math.abs(priceImpact),
+              router: ultraOrder.router,
+              dexPath
+            } as any);
+
+            addLog('success', `  INPUT: ${currentAmount.toFixed(4)} ${currentToken.symbol}`);
+            addLog('success', `  OUTPUT: ${outputAmount.toFixed(4)} ${cube.tokenOut!.symbol}`);
+            addLog('info', `  PRICE IMPACT: ${Math.abs(priceImpact).toFixed(2)}%`);
+            addLog('info', `  DEX PATH: ${dexPath}`);
+            addLog('info', `  ROUTER: ${ultraOrder.router}`);
+            addLog('info', `  RATE: 1 ${currentToken.symbol} = ${(outputAmount / currentAmount).toFixed(6)} ${cube.tokenOut!.symbol}`);
+
+            // Update for next iteration
+            currentAmount = outputAmount;
+            currentToken = cube.tokenOut!;
+          } else {
+            addLog('error', `  FAILED TO GET QUOTE FOR ${currentToken.symbol} → ${cube.tokenOut!.symbol}`);
+            break;
+          }
+        } catch (error) {
+          addLog('error', `  STEP ${i + 1} SIMULATION FAILED: ${error instanceof Error ? error.message : 'Unknown'}`);
+          break;
+        }
+      }
+
+      if (simulationResults.length === cubes.length) {
+        const finalResult = simulationResults[simulationResults.length - 1];
+        const initialInput = simulationResults[0];
+        const totalPriceImpact = simulationResults.reduce((sum, result) => sum + result.priceImpact, 0);
+        
+        addLog('success', ' SIMULATION COMPLETE - MAINNET JUPITER ULTRA RESULTS:');
+        addLog('info', ` STARTING: ${initialInput.inputAmount} ${initialInput.inputToken}`);
+        addLog('info', ` ENDING: ${finalResult.outputAmount.toFixed(4)} ${finalResult.outputToken}`);
+        addLog('info', ` TOTAL PRICE IMPACT: ${totalPriceImpact.toFixed(2)}%`);
+        addLog('info', `TOTAL STEPS: ${simulationResults.length}`);
+        addLog('info', ` PRIMARY ROUTER: ${finalResult.router || 'Jupiter V6'}`);
+        
+        // Calculate profit/loss if same token
+        if (initialInput.inputToken === finalResult.outputToken) {
+          const profitLoss = ((finalResult.outputAmount - initialInput.inputAmount) / initialInput.inputAmount) * 100;
+          addLog(profitLoss > 0 ? 'success' : 'error', 
+            ` NET RESULT: ${profitLoss > 0 ? '+' : ''}${profitLoss.toFixed(2)}% ${profitLoss > 0 ? 'PROFIT' : 'LOSS'}`
+          );
+        }
+        
+        addLog('info', ' SIMULATION USES JUPITER ULTRA API WITH MAINNET LIQUIDITY');
+        addLog('info', 'ACTUAL DEVNET EXECUTION USES MOCK DATA - RESULTS WILL DIFFER');
+      }
+    } catch (error) {
+      addLog('error', `SIMULATION FAILED: ${error instanceof Error ? error.message : 'Unknown'}`);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   const executeCombo = async () => {
     if (!isValidCombo) {
       addLog('error', 'INVALID COMBO CONFIGURATION');
       return;
     }
 
-    setIsExecuting(true);
-    const isSimulation = !connected;
-
-    if (isSimulation) {
-      addLog('info', `SIMULATION MODE - BUILDING ${cubes.length}-STEP PLAN`);
-    } else {
-      addLog('info', `BUILDING ${cubes.length}-STEP EXECUTION PLAN`);
+    if (!connected || !publicKey) {
+      addLog('error', 'WALLET NOT CONNECTED');
+      return;
     }
 
-    try {
-      const { buildComboExecutionPlan, executeCombo: executeComboTxs } = await import('@/lib/jupiter');
+    setIsExecuting(true);
+    addLog('info', `EXECUTING ${cubes.length}-STEP COMBO VIA ROUTER CONTRACT`);
 
-      const comboSteps = cubes.map((cube, i) => ({
-        tokenIn: i === 0 ? cube.tokenIn! : cubes[i - 1].tokenOut!,
-        tokenOut: cube.tokenOut!,
-        amountIn: i === 0 ? cube.amountIn! : 0,
-        dex: cube.dex,
+    try {
+      // Build swap parameters for router execution
+      const swapParams: SwapParams[] = cubes.map((cube, i) => ({
+        inputMint: i === 0 ? cube.tokenIn!.mint : cubes[i - 1].tokenOut!.mint,
+        outputMint: cube.tokenOut!.mint,
+        amount: i === 0 ? cube.amountIn! : outputs[i - 1]?.amount || 0, // Use calculated output or input amount
+        slippageBps: 50 // 0.5% slippage
       }));
 
-      addLog('info', 'FETCHING LIVE QUOTES FROM JUPITER V6');
-
-      const executionPlan = await buildComboExecutionPlan(comboSteps, 100);
-
-      if (!executionPlan) {
-        throw new Error('FAILED TO BUILD EXECUTION PLAN');
+      addLog('info', 'BUILDING COMBO TRANSACTION VIA ROUTER');
+      addLog('info', 'DEVNET MODE - USING MOCK JUPITER DATA FOR TESTING');
+      addLog('info', `STEP 1: ${cubes[0].tokenIn?.symbol} → ${cubes[0].tokenOut?.symbol}`);
+      
+      for (let i = 1; i < cubes.length; i++) {
+        addLog('info', `STEP ${i + 1}: ${cubes[i - 1].tokenOut?.symbol} → ${cubes[i].tokenOut?.symbol}`);
       }
 
-      addLog('success', `EXECUTION PLAN BUILT - ${executionPlan.totalSteps} STEPS`);
-      addLog('info', `ESTIMATED OUTPUT: ${executionPlan.estimatedOutput.toFixed(4)} ${cubes[cubes.length - 1].tokenOut?.symbol}`);
-      addLog('info', `TOTAL PRICE IMPACT: ${executionPlan.priceImpact.toFixed(2)}%`);
-      addLog('info', `ESTIMATED GAS: ${executionPlan.estimatedGas.toFixed(3)} SOL`);
+      // Execute combo swaps via router contract
+      const signature = await executeComboSwaps(
+        publicKey,
+        swapParams,
+        async (transaction) => {
+          if (!window.solana) {
+            throw new Error('Phantom wallet not found');
+          }
+          return await window.solana.signTransaction(transaction);
+        }
+      );
 
-      for (let i = 0; i < executionPlan.quotes.length; i++) {
-        const quote = executionPlan.quotes[i];
-        const cube = cubes[i];
-        addLog('quote', `STEP ${i + 1}: ${cube.tokenIn?.symbol} → ${cube.tokenOut?.symbol} VIA ${cube.dex?.toUpperCase()}`);
-        addLog('info', `  OUTPUT: ${(parseInt(quote.outAmount) / Math.pow(10, cube.tokenOut!.decimals)).toFixed(4)} ${cube.tokenOut?.symbol}`);
-      }
-
-      addLog('info', 'BUILDING TRANSACTION INSTRUCTIONS');
-
-      const userPublicKey = 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH';
-      const transactions = await executeComboTxs(executionPlan, userPublicKey);
-
-      addLog('success', `${transactions.length} TRANSACTIONS READY TO SIGN`);
-
-      for (let i = 0; i < transactions.length; i++) {
-        const txPreview = transactions[i].substring(0, 32);
-        addLog('info', `TX ${i + 1}: ${txPreview}...`);
-      }
-
-      if (isSimulation) {
-        addLog('success', 'SIMULATION COMPLETE - ALL QUOTES VALID');
-        addLog('info', 'CONNECT WALLET TO EXECUTE REAL TRANSACTIONS');
-      } else {
-        addLog('success', 'COMBO EXECUTION READY');
-        addLog('info', 'READY TO SIGN AND BROADCAST');
-        addLog('info', 'TRANSACTIONS WILL BE SENT SEQUENTIALLY');
-      }
+      addLog('success', `COMBO EXECUTED SUCCESSFULLY`);
+      addLog('info', `TRANSACTION: ${signature}`);
+      addLog('info', `VIEW ON EXPLORER: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+      
     } catch (error) {
       addLog('error', `EXECUTION FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
       console.error('Combo execution error:', error);
@@ -492,7 +572,7 @@ export default function ComboBuilder() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="font-mono text-xs">
               <span className="text-white">NETWORK:</span>{' '}
-              <span className="text-[#9333ea]">SOLANA-MAINNET</span>
+              <span className="text-[#9333ea]">SOLANA-DEVNET</span>
               <span className="text-white ml-4">LATENCY:</span>{' '}
               <span className={networkLatency < 200 ? 'text-[#9333ea]' : networkLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                 {networkLatency}ms
@@ -645,18 +725,34 @@ export default function ComboBuilder() {
                     {connected ? '[CONNECTED]' : '[DISCONNECTED]'}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-white">SIMULATION</span>
+                  <span className={isSimulating ? 'text-[#ffff00]' : 'text-[#9333ea]'}>
+                    {isSimulating ? '[RUNNING]' : '[READY]'}
+                  </span>
+                </div>
               </div>
 
-              <button
-                onClick={executeCombo}
-                disabled={!isValidCombo || isExecuting}
-                className="w-full mt-6 border border-[#ffff00] py-3 text-[#ffff00] hover:bg-[#ffff00] hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-sm"
-              >
-                {isExecuting ? '[BUILDING TX...]' : connected ? '[EXECUTE COMBO]' : '[SIMULATE EXECUTION]'}
-              </button>
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={simulateCombo}
+                  disabled={!isValidCombo || isSimulating || isExecuting}
+                  className="w-full border border-[#9333ea] py-3 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-sm"
+                >
+                  {isSimulating ? '[SIMULATING...]' : '[SIMULATE ON MAINNET]'}
+                </button>
+                
+                <button
+                  onClick={executeCombo}
+                  disabled={!isValidCombo || isExecuting || isSimulating}
+                  className="w-full border border-[#ffff00] py-3 text-[#ffff00] hover:bg-[#ffff00] hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-mono text-sm"
+                >
+                  {isExecuting ? '[BUILDING TX...]' : connected ? '[EXECUTE ON DEVNET]' : '[CONNECT WALLET]'}
+                </button>
+              </div>
               {!connected && isValidCombo && (
                 <div className="mt-2 text-xs font-mono text-white text-center">
-                  SIMULATION MODE - CONNECT WALLET TO EXECUTE
+                  DEVNET EXECUTION - CONNECT WALLET TO TEST CONTRACTS
                 </div>
               )}
             </div>
