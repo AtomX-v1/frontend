@@ -133,7 +133,8 @@ export function useScanner(
       } catch (err) {
         console.error('Scanner health check failed:', err);
         setConnected(false);
-        setError('Scanner API is not available at localhost:3002');
+        const apiUrl = process.env.NEXT_PUBLIC_SCANNER_API_URL || 'localhost:3002';
+        setError(`Scanner API is not available at ${apiUrl}`);
       }
     };
 
