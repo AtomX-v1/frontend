@@ -30,7 +30,6 @@ interface OpportunityAlert {
 }
 
 export default function ArbitragePage() {
-  const connected = false;
   const [minProfit] = useState(-10);
   const [enableScan, setEnableScan] = useState(false);
   const { opportunities: fallbackOpportunities, loading: fallbackLoading, refresh } = useArbitrage(minProfit, enableScan);

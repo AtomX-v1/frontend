@@ -2,17 +2,32 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useWallet } from '@/contexts/WalletContext';
 
 export default function Home() {
   const router = useRouter();
+  const { connected, publicKey } = useWallet();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<string[]>([
     '> ATOMX DEFI PROTOCOL',
     '> SOLANA NETWORK [DEVNET]',
     '> JUPITER V6 AGGREGATOR [ONLINE]',
+    connected ? `> WALLET CONNECTED [${publicKey?.toString().slice(0, 8)}...]` : '> WALLET [DISCONNECTED]',
     '> ',
     '> TYPE "help" FOR COMMANDS',
   ]);
+
+  // Update history when wallet connection changes
+  useEffect(() => {
+    setHistory([
+      '> ATOMX DEFI PROTOCOL',
+      '> SOLANA NETWORK [DEVNET]',
+      '> JUPITER V6 AGGREGATOR [ONLINE]',
+      connected ? `> WALLET CONNECTED [${publicKey?.toString().slice(0, 8)}...]` : '> WALLET [DISCONNECTED]',
+      '> ',
+      '> TYPE "help" FOR COMMANDS',
+    ]);
+  }, [connected, publicKey]);
 
   const handleCommand = (cmd: string) => {
     const lower = cmd.toLowerCase().trim();

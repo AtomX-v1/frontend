@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatNumber } from '@/lib/utils';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface LogEntry {
   timestamp: string;
@@ -19,7 +20,7 @@ interface Transaction {
 }
 
 export default function VaultPage() {
-  const connected = false;
+  const { connected, publicKey, balance } = useWallet();
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawShares, setWithdrawShares] = useState('');
   const [isDepositing, setIsDepositing] = useState(false);
@@ -107,8 +108,18 @@ export default function VaultPage() {
       return;
     }
 
+    // Check if user has enough balance (reserve for transaction fees)
+    const availableBalance = balance || 0;
+    const reservedForFees = 0.01;
+    const maxDepositable = Math.max(0, availableBalance - reservedForFees);
+    
+    if (amount > maxDepositable) {
+      addLog('error', `INSUFFICIENT BALANCE - MAX: ${maxDepositable.toFixed(4)} SOL (${reservedForFees} SOL RESERVED FOR FEES)`);
+      return;
+    }
+
     setIsDepositing(true);
-    addLog('deposit', `INITIATING DEPOSIT: ${amount} USDC`);
+    addLog('deposit', `INITIATING DEPOSIT: ${amount} SOL`);
 
     try {
       addLog('info', 'CALCULATING SHARE ALLOCATION');
@@ -124,7 +135,7 @@ export default function VaultPage() {
       setTransactions(prev => [{
         id: txId,
         type: 'DEPOSIT',
-        amount: `${amount} USDC`,
+        amount: `${amount} SOL`,
         shares: `${estimatedShares.toFixed(0)}`,
         timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
         status: 'PENDING'
@@ -220,7 +231,7 @@ export default function VaultPage() {
             <div className="font-mono text-xs">
               <span className="text-white">WALLET:</span>{' '}
               <span className={connected ? 'text-[#9333ea]' : 'text-[#ff0000]'}>
-                {connected ? '[CONNECTED]' : '[DISCONNECTED]'}
+                {connected ? `[${publicKey?.toString().slice(0, 8)}...]` : '[DISCONNECTED]'}
               </span>
             </div>
           </div>
@@ -259,11 +270,15 @@ export default function VaultPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="cyber-card p-6 bg-black/90 backdrop-blur-sm">
                 <h3 className="text-sm font-mono text-[#9333ea] mb-4 border-b border-[#9333ea]/30 pb-2">
-                  DEPOSIT USDC
+                  DEPOSIT SOL
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-white font-mono mb-2 block">AMOUNT_USDC</label>
+                    <label className="text-xs text-white font-mono mb-2 block">
+                      AMOUNT_SOL {connected && balance !== null && (
+                        <span className="text-[#ffff00] ml-2">BALANCE: {balance.toFixed(4)}</span>
+                      )}
+                    </label>
                     <input
                       type="number"
                       value={depositAmount}
@@ -276,8 +291,16 @@ export default function VaultPage() {
                     {[25, 50, 75, 100].map((percent) => (
                       <button
                         key={percent}
-                        onClick={() => setDepositAmount((1000 * percent / 100).toString())}
-                        className="px-2 py-2 bg-black border border-gray-700 hover:border-[#9333ea] transition-colors font-mono text-xs text-white hover:text-[#9333ea]"
+                        onClick={() => {
+                          const availableBalance = balance || 0;
+                          // Reserve 0.01 SOL for transaction fees
+                          const reservedForFees = 0.01;
+                          const usableBalance = Math.max(0, availableBalance - reservedForFees);
+                          const amount = (usableBalance * percent / 100);
+                          setDepositAmount(amount.toFixed(4));
+                        }}
+                        disabled={!connected || !balance}
+                        className="px-2 py-2 bg-black border border-gray-700 hover:border-[#9333ea] transition-colors font-mono text-xs text-white hover:text-[#9333ea] disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         {percent}%
                       </button>
@@ -438,12 +461,12 @@ export default function VaultPage() {
                 VAULT CONFIG
               </h3>
               <div className="space-y-2 font-mono text-xs text-white">
-                <p>▸ NETWORK: SOLANA_MAINNET_BETA</p>
-                <p>▸ ASSET: USDC_STABLECOIN</p>
+                <p>▸ NETWORK: SOLANA_DEVNET</p>
+                <p>▸ ASSET: SOL_NATIVE_TOKEN</p>
                 <p>▸ STRATEGY: ARBITRAGE_EXECUTION</p>
                 <p>▸ EXECUTOR_FEE: 10%_OF_PROFITS</p>
                 <p>▸ VAULT_SHARE: 90%_OF_PROFITS</p>
-                <p>▸ MIN_DEPOSIT: 1_USDC</p>
+                <p>▸ MIN_DEPOSIT: 0.001_SOL</p>
                 <p>▸ WITHDRAW_FEE: 0%</p>
                 <p>▸ LOCK_PERIOD: NONE</p>
               </div>

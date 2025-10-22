@@ -5,6 +5,7 @@ import { SwapCube as SwapCubeType, TokenInfo } from '@/types';
 import { COMMON_TOKENS } from '@/lib/constants';
 import { generateId, formatNumber } from '@/lib/utils';
 import { getJupiterQuote } from '@/lib/jupiter';
+import { useWallet } from '@/contexts/WalletContext';
 import {
   DndContext,
   closestCenter,
@@ -252,8 +253,7 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
 }
 
 export default function ComboBuilder() {
-  const connected = false;
-  const publicKey = null;
+  const { connected, publicKey } = useWallet();
   const [cubes, setCubes] = useState<SwapCubeType[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);

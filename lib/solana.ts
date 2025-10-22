@@ -1,8 +1,12 @@
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, clusterApiUrl } from '@solana/web3.js';
 
-const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+// Use devnet by default
+const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl('devnet');
 
 export const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+
+// Export devnet connection specifically for wallet integration
+export const devnetConnection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
 export async function executeSwapSequence(
   swaps: Array<{
