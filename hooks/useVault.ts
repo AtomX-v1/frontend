@@ -98,6 +98,8 @@ export const useVault = () => {
       throw new Error('Wallet not connected');
     }
 
+    let signature: string | null = null;
+    
     try {
       setLoading(true);
       setError(null);
@@ -114,14 +116,40 @@ export const useVault = () => {
       const signedTransaction = await signTransaction(transaction);
 
       // Send transaction
-      const signature = await devnetConnection.sendRawTransaction(signedTransaction.serialize());
+      signature = await devnetConnection.sendRawTransaction(signedTransaction.serialize());
       
-      // Confirm transaction
-      await devnetConnection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight,
-      });
+      // Confirm transaction with better error handling
+      try {
+        await devnetConnection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        });
+      } catch (confirmError: any) {
+        // Check if the error is about the transaction already being processed
+        const errorMessage = confirmError.message || '';
+        const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                       errorMessage.includes('already been processed');
+        
+        if (isAlreadyProcessedError) {
+          console.log('Transaction already processed (this is normal for successful transactions)');
+          // Don't throw error, continue with success flow
+        } else {
+          // For other confirmation errors, check transaction status
+          try {
+            const txStatus = await devnetConnection.getSignatureStatus(signature);
+            if (txStatus.value?.confirmationStatus === 'confirmed' || 
+                txStatus.value?.confirmationStatus === 'finalized') {
+              console.log('Transaction confirmed despite confirmation error');
+              // Continue with success flow
+            } else {
+              throw confirmError; // Re-throw if transaction is not confirmed
+            }
+          } catch (statusError) {
+            throw confirmError; // Re-throw original confirmation error
+          }
+        }
+      }
 
       // Refresh vault info
       await fetchVaultInfo();
@@ -129,6 +157,18 @@ export const useVault = () => {
       return signature;
     } catch (err: any) {
       console.error('Deposit error:', err);
+      
+      // Don't show error if we have a signature and the error is about already processed transaction
+      const errorMessage = err.message || '';
+      const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                     errorMessage.includes('already been processed');
+      
+      if (signature && isAlreadyProcessedError) {
+        // Transaction was successful, refresh vault info and return signature
+        await fetchVaultInfo();
+        return signature;
+      }
+      
       setError(err.message || 'Deposit failed');
       throw err;
     } finally {
@@ -142,6 +182,8 @@ export const useVault = () => {
       throw new Error('Wallet not connected');
     }
 
+    let signature: string | null = null;
+    
     try {
       setLoading(true);
       setError(null);
@@ -158,14 +200,40 @@ export const useVault = () => {
       const signedTransaction = await signTransaction(transaction);
 
       // Send transaction
-      const signature = await devnetConnection.sendRawTransaction(signedTransaction.serialize());
+      signature = await devnetConnection.sendRawTransaction(signedTransaction.serialize());
       
-      // Confirm transaction
-      await devnetConnection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight,
-      });
+      // Confirm transaction with better error handling
+      try {
+        await devnetConnection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        });
+      } catch (confirmError: any) {
+        // Check if the error is about the transaction already being processed
+        const errorMessage = confirmError.message || '';
+        const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                       errorMessage.includes('already been processed');
+        
+        if (isAlreadyProcessedError) {
+          console.log('Transaction already processed (this is normal for successful transactions)');
+          // Don't throw error, continue with success flow
+        } else {
+          // For other confirmation errors, check transaction status
+          try {
+            const txStatus = await devnetConnection.getSignatureStatus(signature);
+            if (txStatus.value?.confirmationStatus === 'confirmed' || 
+                txStatus.value?.confirmationStatus === 'finalized') {
+              console.log('Transaction confirmed despite confirmation error');
+              // Continue with success flow
+            } else {
+              throw confirmError; // Re-throw if transaction is not confirmed
+            }
+          } catch (statusError) {
+            throw confirmError; // Re-throw original confirmation error
+          }
+        }
+      }
 
       // Refresh vault info
       await fetchVaultInfo();
@@ -173,6 +241,18 @@ export const useVault = () => {
       return signature;
     } catch (err: any) {
       console.error('Withdraw error:', err);
+      
+      // Don't show error if we have a signature and the error is about already processed transaction
+      const errorMessage = err.message || '';
+      const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                     errorMessage.includes('already been processed');
+      
+      if (signature && isAlreadyProcessedError) {
+        // Transaction was successful, refresh vault info and return signature
+        await fetchVaultInfo();
+        return signature;
+      }
+      
       setError(err.message || 'Withdraw failed');
       throw err;
     } finally {

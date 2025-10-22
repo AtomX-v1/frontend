@@ -167,10 +167,11 @@ export default function VaultPage() {
     }
 
     const userSharesBN = vaultInfo.userShares;
-    const sharesBN = new BN(Math.floor(shares));
+    // Convert decimal shares back to raw format (multiply by 1e9)
+    const sharesBN = new BN(Math.floor(shares * 1e9));
     
     if (sharesBN.gt(userSharesBN)) {
-      addLog('error', `INSUFFICIENT SHARES - MAX: ${userSharesBN.toString()}`);
+      addLog('error', `INSUFFICIENT SHARES - MAX: ${(userSharesBN.toNumber() / 1e9).toFixed(4)}`);
       return;
     }
 
@@ -355,8 +356,10 @@ export default function VaultPage() {
                         key={percent}
                         onClick={() => {
                           const userShares = vaultInfo.userShares;
-                          const withdrawAmount = userShares.muln(percent).divn(100);
-                          setWithdrawShares(withdrawAmount.toString());
+                          const withdrawAmountRaw = userShares.muln(percent).divn(100);
+                          // Convert to decimal format for display (divide by 1e9 like in the shares display)
+                          const withdrawAmountFormatted = (withdrawAmountRaw.toNumber() / 1e9).toFixed(4);
+                          setWithdrawShares(withdrawAmountFormatted);
                         }}
                         disabled={!connected || vaultInfo.userShares.isZero()}
                         className="px-2 py-2 bg-black border border-gray-700 hover:border-[#ff9900] transition-colors font-mono text-xs text-white hover:text-[#ff9900] disabled:opacity-30 disabled:cursor-not-allowed"
