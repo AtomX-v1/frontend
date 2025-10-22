@@ -1,4 +1,4 @@
-const SCANNER_API_BASE = 'http://localhost:3002';
+const SCANNER_API_BASE = process.env.NEXT_PUBLIC_SCANNER_API_URL || 'http://localhost:3002';
 
 export interface ScannerConfig {
   scanInterval?: number;
@@ -164,7 +164,8 @@ export class ScannerAPI {
     onClose?: () => void
   ): void {
     try {
-      this.ws = new WebSocket(`ws://localhost:3002/ws/scanner`);
+      const wsUrl = (process.env.NEXT_PUBLIC_SCANNER_API_URL || 'http://localhost:3002').replace(/^http/, 'ws');
+      this.ws = new WebSocket(`${wsUrl}/ws/scanner`);
 
       this.ws.onopen = () => {
         console.log('Scanner WebSocket connected');
