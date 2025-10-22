@@ -42,6 +42,9 @@ export default function ArbitragePage() {
   
   // State for structured opportunity alerts
   const [opportunityAlerts, setOpportunityAlerts] = useState<OpportunityAlert[]>([]);
+  
+  // State for view more functionality
+  const [showAllOpportunities, setShowAllOpportunities] = useState(false);
 
   // Handle scanner log messages
   const handleScannerLog = (logData: any) => {
@@ -479,15 +482,6 @@ export default function ArbitragePage() {
                   {loading ? '[SCANNING...]' : scanner.connected ? '[START SCANNER]' : '[SCAN NOW]'}
                 </button>
               )}
-              {scanner.connected && (
-                <button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  className="border border-[#9333ea] px-4 py-2 text-[#9333ea] hover:bg-[#9333ea] hover:text-black disabled:opacity-30 transition-colors font-mono text-xs"
-                >
-                  {loading ? '[SCANNING...]' : '[MANUAL SCAN]'}
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -558,17 +552,48 @@ export default function ArbitragePage() {
               {/* Structured Arbitrage Opportunities */}
               {opportunityAlerts.length > 0 && (
                 <div className="mb-4 space-y-3">
-                  <h4 className="text-xs font-mono text-[#ffff00] mb-2">ARBITRAGE OPPORTUNITIES [{opportunityAlerts.filter(op => {
-                    const spreadPercent = op.priceSpread ? parseFloat(op.priceSpread.replace('%', '')) : 0;
-                    return spreadPercent > 0;
-                  }).length}]</h4>
-                  {opportunityAlerts
-                    .filter((opportunity) => {
-                      // Filter opportunities with profit > 0
-                      const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
-                      return spreadPercent > 0;
-                    })
-                    .map((opportunity) => {
+                  {(() => {
+                    // Filter opportunities with profit > 0 and remove duplicates
+                    const filteredOpportunities = opportunityAlerts
+                      .filter((opportunity) => {
+                        const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
+                        return spreadPercent > 0;
+                      })
+                      .filter((opportunity, index, arr) => {
+                        // Remove duplicates based on tokenPair and similar profit margins
+                        return arr.findIndex(op => {
+                          const sameTokenPair = op.tokenPair === opportunity.tokenPair;
+                          const similarProfit = Math.abs(
+                            parseFloat(op.priceSpread?.replace('%', '') || '0') - 
+                            parseFloat(opportunity.priceSpread?.replace('%', '') || '0')
+                          ) < 0.1; // Consider similar if within 0.1% difference
+                          return sameTokenPair && similarProfit;
+                        }) === index;
+                      });
+                    
+                    // Limit displayed opportunities unless showing all
+                    const displayedOpportunities = showAllOpportunities 
+                      ? filteredOpportunities 
+                      : filteredOpportunities.slice(0, 5);
+                    
+                    const hasMore = filteredOpportunities.length > 5;
+                    
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-mono text-[#ffff00] mb-2">
+                            ARBITRAGE OPPORTUNITIES [{filteredOpportunities.length}]
+                          </h4>
+                          {hasMore && (
+                            <button
+                              onClick={() => setShowAllOpportunities(!showAllOpportunities)}
+                              className="text-xs font-mono text-[#9333ea] hover:text-white transition-colors"
+                            >
+                              {showAllOpportunities ? '[SHOW LESS]' : '[VIEW MORE]'}
+                            </button>
+                          )}
+                        </div>
+                        {displayedOpportunities.map((opportunity) => {
                     // Calculate estimated profit in USD based on price spread
                     const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
                     const estimatedProfitUSD = spreadPercent > 0 ? (1000 * (spreadPercent / 100)).toFixed(2) : '0.00';
@@ -630,6 +655,9 @@ export default function ArbitragePage() {
                       </div>
                     );
                   })}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
               
