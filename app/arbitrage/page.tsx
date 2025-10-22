@@ -15,6 +15,20 @@ interface LogEntry {
   id?: string;
 }
 
+interface OpportunityAlert {
+  id: string;
+  timestamp: string;
+  priceSpread?: string;
+  forwardRate?: string;
+  reverseRate?: string;
+  profitUSD?: string;
+  inputToken?: string;
+  outputToken?: string;
+  tokenPair?: string;
+  route?: string[];
+  isExecutable: boolean;
+}
+
 export default function ArbitragePage() {
   const connected = false;
   const [minProfit, setMinProfit] = useState(-10);
@@ -23,12 +37,19 @@ export default function ArbitragePage() {
   
   // State for scanner logs (to show in live opportunities section)
   const [scannerLogs, setScannerLogs] = useState<LogEntry[]>([]);
+  
+  // State for structured opportunity alerts
+  const [opportunityAlerts, setOpportunityAlerts] = useState<OpportunityAlert[]>([]);
 
   // Handle scanner log messages
   const handleScannerLog = (logData: any) => {
     // Filter out noise - only show scanning-related logs
     const allowedCategories = ['PRICE', 'ROUTE', 'SCAN'];
-    const isOpportunity = logData.message?.toLowerCase().includes('opportunity');
+    const isOpportunity = logData.message?.toLowerCase().includes('opportunity') || 
+                         logData.message?.includes('ARBITRAGE OPPORTUNITY') ||
+                         logData.message?.includes('Price Spread') ||
+                         logData.message?.includes('Forward Rate') ||
+                         logData.message?.includes('Reverse Rate');
     
     // Skip API health checks, WebSocket connections, and other noise
     if (logData.category === 'API' && (
@@ -47,7 +68,12 @@ export default function ArbitragePage() {
       return;
     }
     
-    // Only allow scanning categories or opportunity messages
+    // Filter out individual rate/spread messages from live display (but keep for opportunity parsing)
+    const isIndividualRate = logData.message?.includes('Price Spread:') || 
+                            logData.message?.includes('Forward Rate:') || 
+                            logData.message?.includes('Reverse Rate:');
+    
+    // Only allow scanning categories or main opportunity messages (not individual rates)
     if (!allowedCategories.includes(logData.category) && !isOpportunity) {
       return;
     }
@@ -67,25 +93,79 @@ export default function ArbitragePage() {
       level: logData.level
     };
     
-    // Add to scanner logs (shown in live opportunities section)
-    setScannerLogs(prev => {
-      // Create unique identifier for this log entry
-      const logId = `${logEntry.timestamp}-${logData.timestamp || Date.now()}-${logEntry.message.slice(0, 20)}`;
+    // If this is an arbitrage opportunity, add it to the opportunity alerts
+    if (isOpportunity) {
+      // Only add to opportunity alerts logs if it's the main opportunity message
+      if (!isIndividualRate) {
+        addLog('opportunity', logData.message || '');
+      }
       
-      // Prevent duplicates by checking if we already have this exact log
-      const isDuplicate = prev.some(log => {
-        const existingId = `${log.timestamp}-${log.category || ''}-${log.message.slice(0, 20)}`;
-        return existingId === logId || (
-          log.timestamp === logEntry.timestamp && 
-          log.message === logEntry.message &&
-          Math.abs(new Date(logData.timestamp || Date.now()).getTime() - new Date().getTime()) < 1000
-        );
+      // Parse arbitrage opportunity data for structured alerts
+      const message = logData.message || '';
+      if (message.includes('ARBITRAGE OPPORTUNITY')) {
+        const opportunityId = `${timestamp}-${Date.now()}`;
+        const newAlert: OpportunityAlert = {
+          id: opportunityId,
+          timestamp,
+          tokenPair: 'SOL/USDC', // Default, will be enhanced later
+          isExecutable: true
+        };
+        
+        setOpportunityAlerts(prev => [...prev.slice(-9), newAlert]);
+      } else if (message.includes('Price Spread:')) {
+        const spread = message.split('Price Spread:')[1]?.trim();
+        setOpportunityAlerts(prev => {
+          if (prev.length > 0) {
+            const updated = [...prev];
+            updated[updated.length - 1].priceSpread = spread;
+            return updated;
+          }
+          return prev;
+        });
+      } else if (message.includes('Forward Rate:')) {
+        const rate = message.split('Forward Rate:')[1]?.trim();
+        setOpportunityAlerts(prev => {
+          if (prev.length > 0) {
+            const updated = [...prev];
+            updated[updated.length - 1].forwardRate = rate;
+            return updated;
+          }
+          return prev;
+        });
+      } else if (message.includes('Reverse Rate:')) {
+        const rate = message.split('Reverse Rate:')[1]?.trim();
+        setOpportunityAlerts(prev => {
+          if (prev.length > 0) {
+            const updated = [...prev];
+            updated[updated.length - 1].reverseRate = rate;
+            return updated;
+          }
+          return prev;
+        });
+      }
+    }
+    
+    // Only add to scanner logs if it's not an individual rate/spread message
+    if (!isIndividualRate) {
+      setScannerLogs(prev => {
+        // Create unique identifier for this log entry
+        const logId = `${logEntry.timestamp}-${logData.timestamp || Date.now()}-${logEntry.message.slice(0, 20)}`;
+        
+        // Prevent duplicates by checking if we already have this exact log
+        const isDuplicate = prev.some(log => {
+          const existingId = `${log.timestamp}-${log.category || ''}-${log.message.slice(0, 20)}`;
+          return existingId === logId || (
+            log.timestamp === logEntry.timestamp && 
+            log.message === logEntry.message &&
+            Math.abs(new Date(logData.timestamp || Date.now()).getTime() - new Date().getTime()) < 1000
+          );
+        });
+        
+        if (isDuplicate) return prev;
+        
+        return [...prev.slice(-99), { ...logEntry, id: logId }];
       });
-      
-      if (isDuplicate) return prev;
-      
-      return [...prev.slice(-99), { ...logEntry, id: logId }];
-    });
+    }
   };
   
   // Handle scanner opportunity messages
@@ -135,6 +215,47 @@ export default function ArbitragePage() {
     // Only add to opportunity alerts if it's an opportunity or important system message
     if (type === 'opportunity' || (type === 'SYSTEM' && (message.includes('SCANNER') || message.includes('READY')))) {
       setLogs(prev => [...prev.slice(-50), { timestamp, type, message }]);
+    }
+  };
+
+  const handleExecuteArbitrage = async (opportunityId: string) => {
+    const opportunity = opportunityAlerts.find(op => op.id === opportunityId);
+    if (!opportunity) return;
+
+    addLog('info', `EXECUTING ARBITRAGE [${opportunity.timestamp}] - PROFIT: ${opportunity.priceSpread || 'N/A'}`);
+    
+    // Mark opportunity as non-executable during execution
+    setOpportunityAlerts(prev => 
+      prev.map(op => 
+        op.id === opportunityId 
+          ? { ...op, isExecutable: false }
+          : op
+      )
+    );
+
+    try {
+      // TODO: Connect to smart contract execution
+      // For now, simulate execution
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      addLog('success', `ARBITRAGE EXECUTED SUCCESSFULLY - ID: ${opportunityId.slice(-8)}`);
+      
+      // Remove executed opportunity after 5 seconds
+      setTimeout(() => {
+        setOpportunityAlerts(prev => prev.filter(op => op.id !== opportunityId));
+      }, 5000);
+      
+    } catch (error) {
+      addLog('error', `ARBITRAGE EXECUTION FAILED - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Re-enable execution on failure
+      setOpportunityAlerts(prev => 
+        prev.map(op => 
+          op.id === opportunityId 
+            ? { ...op, isExecutable: true }
+            : op
+        )
+      );
     }
   };
 
@@ -348,15 +469,6 @@ export default function ArbitragePage() {
                   <span className="text-[#9333ea]">LIVE SCANNER ACTIVITY</span>
                   <span className="text-white ml-2">[{scannerLogs.length}]</span>
                 </div>
-                <label className="flex items-center gap-2 text-xs font-mono text-white">
-                  MIN_PROFIT_$
-                  <input
-                    type="number"
-                    value={minProfit}
-                    onChange={(e) => setMinProfit(parseFloat(e.target.value))}
-                    className="w-20 bg-black border border-[#9333ea]/30 px-2 py-1 text-[#9333ea] font-mono text-sm focus:outline-none focus:border-[#9333ea]"
-                  />
-                </label>
               </div>
 
               {loading ? (
@@ -409,9 +521,81 @@ export default function ArbitragePage() {
             <div className="cyber-card p-4 bg-black/90 backdrop-blur-sm">
               <h3 className="text-sm font-mono text-[#9333ea] mb-3 border-b border-[#9333ea]/30 pb-2 flex items-center justify-between">
                 <span>OPPORTUNITY ALERTS</span>
-                <span className="text-white">[LIVE]</span>
+                <span className="text-white">[{opportunityAlerts.length}]</span>
               </h3>
-              <div className="h-96 overflow-y-auto space-y-1 font-mono text-[10px] custom-scrollbar">
+              
+              {/* Structured Arbitrage Opportunities */}
+              {opportunityAlerts.length > 0 && (
+                <div className="mb-4 space-y-3">
+                  <h4 className="text-xs font-mono text-[#ffff00] mb-2">ARBITRAGE OPPORTUNITIES [{opportunityAlerts.length}]</h4>
+                  {opportunityAlerts.map((opportunity) => {
+                    // Calculate estimated profit in USD based on price spread
+                    const spreadPercent = opportunity.priceSpread ? parseFloat(opportunity.priceSpread.replace('%', '')) : 0;
+                    const estimatedProfitUSD = spreadPercent > 0 ? (1000 * (spreadPercent / 100)).toFixed(2) : '0.00';
+                    
+                    return (
+                      <div key={opportunity.id} className="border border-[#9333ea]/30 p-4 bg-black/50 rounded-sm">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="text-[#9333ea] font-mono text-xs mb-1">[{opportunity.timestamp}] ARBITRAGE DETECTED</div>
+                            <div className="text-[#ffff00] font-mono text-sm font-bold">
+                              {opportunity.tokenPair || 'SOL/USDC'} • Est. ${estimatedProfitUSD} profit
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleExecuteArbitrage(opportunity.id)}
+                            disabled={!opportunity.isExecutable}
+                            className={`px-4 py-2 text-xs font-mono border transition-colors ${
+                              opportunity.isExecutable
+                                ? 'border-[#00ff00] text-[#00ff00] hover:bg-[#00ff00] hover:text-black'
+                                : 'border-gray-600 text-gray-600 cursor-not-allowed'
+                            }`}
+                          >
+                            {opportunity.isExecutable ? '[EXECUTE ARBITRAGE]' : '[EXECUTING...]'}
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 font-mono text-[10px]">
+                          {opportunity.priceSpread && (
+                            <div className="space-y-1">
+                              <span className="text-gray-400 block">PROFIT MARGIN</span>
+                              <span className="text-[#00ff00] font-bold text-sm">{opportunity.priceSpread}</span>
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            <span className="text-gray-400 block">TOKEN PAIR</span>
+                            <span className="text-white">{opportunity.tokenPair || 'SOL/USDC'}</span>
+                          </div>
+                          {opportunity.forwardRate && (
+                            <div className="space-y-1">
+                              <span className="text-gray-400 block">FORWARD RATE</span>
+                              <span className="text-white">{opportunity.forwardRate}</span>
+                            </div>
+                          )}
+                          {opportunity.reverseRate && (
+                            <div className="space-y-1">
+                              <span className="text-gray-400 block">REVERSE RATE</span>
+                              <span className="text-white">{opportunity.reverseRate}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-3 pt-2 border-t border-[#9333ea]/20">
+                          <div className="flex justify-between items-center font-mono text-[9px] text-gray-400">
+                            <span>ROUTE: Jupiter Aggregator</span>
+                            <span>GAS: ~0.005 SOL</span>
+                            <span>SLIPPAGE: 0.5%</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* System Logs */}
+              <div className="h-64 overflow-y-auto space-y-1 font-mono text-[10px] custom-scrollbar">
+                <h4 className="text-xs font-mono text-gray-400 mb-2 border-t border-gray-800 pt-2">SYSTEM LOGS</h4>
                 {logs.map((log, i) => (
                   <div key={i} className="flex gap-2">
                     <span className="text-gray-700">[{log.timestamp}]</span>
