@@ -1,10 +1,13 @@
 {
-  "address": "EggEs5AbpAp4rMWc8XmHCr8PwgFSmh7fFSH5Hjay9mgW",
+  "address": "AgcU7r6U5uPEfFccmhYdMLcjckADdfoJ8QcHCgkG74Zg",
   "metadata": {
     "name": "swap_router",
     "version": "0.1.0",
     "spec": "0.1.0"
   },
+  "docs": [
+    "Swap Router Program"
+  ],
   "instructions": [
     {
       "name": "execute_jupiter_swap",
