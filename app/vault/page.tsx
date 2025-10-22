@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatNumber } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
+import { useVault } from '@/hooks/useVault';
+import BN from 'bn.js';
 
 interface LogEntry {
   timestamp: string;
@@ -21,6 +23,7 @@ interface Transaction {
 
 export default function VaultPage() {
   const { connected, publicKey, balance } = useWallet();
+  const { vaultInfo, loading: vaultLoading, error: vaultError, deposit, withdraw } = useVault();
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawShares, setWithdrawShares] = useState('');
   const [isDepositing, setIsDepositing] = useState(false);
@@ -31,15 +34,6 @@ export default function VaultPage() {
   const [vaultLatency, setVaultLatency] = useState(0);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const vaultInfo = {
-    totalValue: 0,
-    totalShares: 0,
-    userShares: 0,
-    userValue: 0,
-    apy: 0,
-    depositors: 0,
-  };
-
   const addLog = (type: LogEntry['type'], message: string) => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setLogs(prev => [...prev.slice(-50), { timestamp, type, message }]);
@@ -49,7 +43,7 @@ export default function VaultPage() {
     const bootSequence = async () => {
       const messages = [
         'INITIALIZING ATOMX VAULT TERMINAL v1.0.0',
-        'LOADING SOLANA MAINNET CONNECTION',
+        'LOADING SOLANA DEVNET CONNECTION',
         'CONNECTING TO VAULT PROGRAM',
         'INITIALIZING SHARE CALCULATION ENGINE',
         'LOADING DEPOSIT/WITHDRAW HANDLERS',
@@ -64,10 +58,21 @@ export default function VaultPage() {
       }
       setBootComplete(true);
       addLog('success', 'VAULT SYSTEM OPERATIONAL - READY FOR TRANSACTIONS');
+      
+      if (connected) {
+        addLog('info', 'FETCHING VAULT POSITION DATA...');
+      }
     };
 
     bootSequence();
-  }, []);
+  }, [connected]);
+
+  // Log vault errors
+  useEffect(() => {
+    if (vaultError) {
+      addLog('error', `VAULT ERROR: ${vaultError}`);
+    }
+  }, [vaultError]);
 
   useEffect(() => {
     const measureLatency = async () => {
@@ -122,28 +127,26 @@ export default function VaultPage() {
     addLog('deposit', `INITIATING DEPOSIT: ${amount} SOL`);
 
     try {
-      addLog('info', 'CALCULATING SHARE ALLOCATION');
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      addLog('info', 'BUILDING TRANSACTION');
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const estimatedShares = amount * 1000;
-      addLog('info', `ESTIMATED SHARES: ${estimatedShares.toFixed(0)}`);
-
-      const txId = `TX${Date.now().toString(36).toUpperCase()}`;
-      setTransactions(prev => [{
-        id: txId,
-        type: 'DEPOSIT',
-        amount: `${amount} SOL`,
-        shares: `${estimatedShares.toFixed(0)}`,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
-        status: 'PENDING'
-      }, ...prev.slice(0, 9)]);
-
-      addLog('success', `TX READY: ${txId.substring(0, 12)}`);
-      addLog('info', 'CONNECT WALLET TO SIGN AND EXECUTE');
-      setDepositAmount('');
+      addLog('info', 'BUILDING VAULT DEPOSIT TRANSACTION');
+      
+      const signature = await deposit(amount);
+      
+      if (signature) {
+        addLog('success', `DEPOSIT SUCCESSFUL: ${signature.substring(0, 12)}...`);
+        
+        const txId = `TX${Date.now().toString(36).toUpperCase()}`;
+        setTransactions(prev => [{
+          id: txId,
+          type: 'DEPOSIT',
+          amount: `${amount} SOL`,
+          shares: vaultInfo.userShares.toString(),
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          status: 'CONFIRMED'
+        }, ...prev.slice(0, 9)]);
+        
+        setDepositAmount('');
+        addLog('info', 'VAULT POSITION UPDATED - SHARES ALLOCATED');
+      }
     } catch (error) {
       addLog('error', `DEPOSIT FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
     } finally {
@@ -163,8 +166,11 @@ export default function VaultPage() {
       return;
     }
 
-    if (shares > vaultInfo.userShares) {
-      addLog('error', `INSUFFICIENT SHARES - MAX: ${vaultInfo.userShares}`);
+    const userSharesBN = vaultInfo.userShares;
+    const sharesBN = new BN(Math.floor(shares));
+    
+    if (sharesBN.gt(userSharesBN)) {
+      addLog('error', `INSUFFICIENT SHARES - MAX: ${userSharesBN.toString()}`);
       return;
     }
 
@@ -172,28 +178,28 @@ export default function VaultPage() {
     addLog('withdraw', `INITIATING WITHDRAW: ${shares} SHARES`);
 
     try {
-      addLog('info', 'CALCULATING WITHDRAW VALUE');
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const estimatedValue = (shares / vaultInfo.totalShares) * vaultInfo.totalValue;
-      addLog('info', `ESTIMATED VALUE: $${estimatedValue.toFixed(2)}`);
-
-      addLog('info', 'BUILDING TRANSACTION');
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const txId = `TX${Date.now().toString(36).toUpperCase()}`;
-      setTransactions(prev => [{
-        id: txId,
-        type: 'WITHDRAW',
-        amount: `$${estimatedValue.toFixed(2)}`,
-        shares: `${shares}`,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
-        status: 'PENDING'
-      }, ...prev.slice(0, 9)]);
-
-      addLog('success', `TX READY: ${txId.substring(0, 12)}`);
-      addLog('info', 'CONNECT WALLET TO SIGN AND EXECUTE');
-      setWithdrawShares('');
+      addLog('info', 'BUILDING VAULT WITHDRAW TRANSACTION');
+      
+      const signature = await withdraw(sharesBN);
+      
+      if (signature) {
+        addLog('success', `WITHDRAW SUCCESSFUL: ${signature.substring(0, 12)}...`);
+        
+        const estimatedValue = (shares / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue;
+        
+        const txId = `TX${Date.now().toString(36).toUpperCase()}`;
+        setTransactions(prev => [{
+          id: txId,
+          type: 'WITHDRAW',
+          amount: `${estimatedValue.toFixed(4)} SOL`,
+          shares: `${shares}`,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          status: 'CONFIRMED'
+        }, ...prev.slice(0, 9)]);
+        
+        setWithdrawShares('');
+        addLog('info', 'VAULT POSITION UPDATED - SOL WITHDRAWN');
+      }
     } catch (error) {
       addLog('error', `WITHDRAW FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
     } finally {
@@ -247,21 +253,21 @@ export default function VaultPage() {
                 <div className="space-y-3 font-mono text-sm">
                   <div className="flex justify-between py-2 border-b border-gray-800">
                     <span className="text-white">SHARES_OWNED</span>
-                    <span className="text-[#9333ea]">{formatNumber(vaultInfo.userShares, 0)}</span>
+                    <span className="text-[#9333ea]">{(vaultInfo.userShares.toNumber() / 1e9).toFixed(4)}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-800">
-                    <span className="text-white">SHARE_VALUE</span>
-                    <span className="text-[#9333ea]">${((vaultInfo.userValue / vaultInfo.userShares) || 0).toFixed(4)}</span>
+                    <span className="text-white">SHARE_PRICE</span>
+                    <span className="text-[#9333ea]">{vaultInfo.totalShares.gt(new BN(0)) ? (vaultInfo.totalValue / (vaultInfo.totalShares.toNumber() / 1e9)).toFixed(6) : '1.000000'} SOL</span>
                   </div>
                 </div>
                 <div className="space-y-3 font-mono text-sm">
                   <div className="flex justify-between py-2 border-b border-gray-800">
                     <span className="text-white">TOTAL_VALUE</span>
-                    <span className="text-[#ffff00] text-lg font-bold">${vaultInfo.userValue.toFixed(2)}</span>
+                    <span className="text-[#ffff00] text-lg font-bold">{vaultInfo.userValue.toFixed(4)} SOL</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-800">
                     <span className="text-white">POOL_SHARE</span>
-                    <span className="text-[#9333ea]">{((vaultInfo.userShares / vaultInfo.totalShares) * 100 || 0).toFixed(2)}%</span>
+                    <span className="text-[#9333ea]">{vaultInfo.totalShares.gt(new BN(0)) ? ((vaultInfo.userShares.toNumber() / vaultInfo.totalShares.toNumber()) * 100).toFixed(2) : '0.00'}%</span>
                   </div>
                 </div>
               </div>
@@ -347,8 +353,13 @@ export default function VaultPage() {
                     {[25, 50, 75, 100].map((percent) => (
                       <button
                         key={percent}
-                        onClick={() => setWithdrawShares((vaultInfo.userShares * percent / 100).toString())}
-                        className="px-2 py-2 bg-black border border-gray-700 hover:border-[#ff9900] transition-colors font-mono text-xs text-white hover:text-[#ff9900]"
+                        onClick={() => {
+                          const userShares = vaultInfo.userShares;
+                          const withdrawAmount = userShares.muln(percent).divn(100);
+                          setWithdrawShares(withdrawAmount.toString());
+                        }}
+                        disabled={!connected || vaultInfo.userShares.isZero()}
+                        className="px-2 py-2 bg-black border border-gray-700 hover:border-[#ff9900] transition-colors font-mono text-xs text-white hover:text-[#ff9900] disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         {percent}%
                       </button>
@@ -358,11 +369,19 @@ export default function VaultPage() {
                     <div className="text-xs font-mono text-white border-t border-gray-800 pt-3">
                       <div className="flex justify-between mb-1">
                         <span>EST_VALUE</span>
-                        <span className="text-[#ff9900]">${((parseFloat(withdrawShares) / vaultInfo.totalShares) * vaultInfo.totalValue || 0).toFixed(2)}</span>
+                        <span className="text-[#ff9900]">
+                          {vaultInfo.totalShares.gt(new BN(0)) 
+                            ? ((parseFloat(withdrawShares) / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue).toFixed(4) 
+                            : '0.0000'} SOL
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>POOL_IMPACT</span>
-                        <span className="text-[#ffff00]">-0.00%</span>
+                        <span className="text-[#ffff00]">
+                          -{vaultInfo.totalShares.gt(new BN(0)) 
+                            ? ((parseFloat(withdrawShares) / vaultInfo.totalShares.toNumber()) * 100).toFixed(2) 
+                            : '0.00'}%
+                        </span>
                       </div>
                     </div>
                   )}

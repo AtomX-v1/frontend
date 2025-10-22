@@ -159,12 +159,9 @@ export const usePhantomWallet = () => {
       setPublicKey(response.publicKey);
       setConnected(true);
       
-      // Switch to devnet
+      // Switch to devnet (note: this method might not be supported by all wallets)
       try {
-        await provider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: 'devnet' }],
-        });
+        await provider.request('wallet_switchEthereumChain', { chainId: 'devnet' });
       } catch (switchError) {
         // Ignore switch errors for now, as the method might not be supported
         console.warn('Could not switch to devnet:', switchError);

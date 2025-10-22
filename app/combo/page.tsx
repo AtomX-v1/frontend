@@ -87,12 +87,12 @@ function ActionCube({ cube, index, onUpdate, onRemove, previousOutput }: {
         const amountInLamports = Math.floor(inputAmount * Math.pow(10, inputToken.decimals));
         const quote = await getJupiterQuote(
           inputToken.mint,
-          cube.tokenOut.mint,
+          cube.tokenOut!.mint,
           amountInLamports
         );
 
         if (quote) {
-          const output = parseInt(quote.outAmount) / Math.pow(10, cube.tokenOut.decimals);
+          const output = parseInt(quote.outAmount) / Math.pow(10, cube.tokenOut!.decimals);
           setEstimatedOutput(output);
           const impact = parseFloat(quote.priceImpactPct || '0');
           setPriceImpact(Math.abs(impact));
