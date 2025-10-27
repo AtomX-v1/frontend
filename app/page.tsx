@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useWallet } from '@/contexts/WalletContext';
+import StakingMetrics from '@/components/StakingMetrics';
 
 export default function Home() {
   const router = useRouter();
@@ -50,7 +51,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-6 flex items-center justify-center">
-      <div className="max-w-4xl w-full">
+      <div className="max-w-6xl w-full">
+        <StakingMetrics />
         <div className="cyber-card p-6">
           <div className="font-mono text-sm">
             {history.map((line, i) => (
