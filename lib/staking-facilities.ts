@@ -23,12 +23,9 @@ export interface VoteAccountsResponse {
   delinquent: ValidatorInfo[];
 }
 
-const API_BASE_URL = 'https://buildstation.stakingfacilities.com';
-const API_KEY = process.env.NEXT_PUBLIC_STAKING_FACILITIES_API_KEY;
-
 class StakingFacilitiesAPI {
   private async makeRequest(method: string, params: any[] = []): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/?api-key=${API_KEY}`, {
+    const response = await fetch('/api/staking', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
