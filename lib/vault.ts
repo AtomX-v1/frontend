@@ -16,7 +16,7 @@ import { devnetConnection } from './solana';
 import BN from 'bn.js';
 
 // Vault program ID from the contract
-export const VAULT_PROGRAM_ID = new PublicKey('2ea7vwH3ziuFKC2DBwp81MjQpkTTbf4nhNefedcKREDy');
+export const VAULT_PROGRAM_ID = new PublicKey('6Y9Zhzdpfjt7qL59WA1Q8WMVRVoXhdpcTKKP1Uw4FLXz');
 
 // WSOL mint address (Wrapped SOL)
 export const WSOL_MINT = NATIVE_MINT;
