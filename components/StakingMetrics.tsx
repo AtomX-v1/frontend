@@ -49,6 +49,9 @@ export default function StakingMetrics() {
         <div className="text-xs text-gray-400">
           EPOCH {data.epoch} • SLOT {formatLargeNumber(data.slot)} • {data.networkHealth.toUpperCase()}
         </div>
+        <div className="text-xs text-gray-500 mt-1">
+          Developed with Staking Facilities API
+        </div>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

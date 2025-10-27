@@ -24,7 +24,7 @@ export interface VoteAccountsResponse {
 }
 
 const API_BASE_URL = 'https://buildstation.stakingfacilities.com';
-const API_KEY = 'zcJeWv3uIiy6sqoP77nTPO6YFBmdCODw';
+const API_KEY = process.env.NEXT_PUBLIC_STAKING_FACILITIES_API_KEY;
 
 class StakingFacilitiesAPI {
   private async makeRequest(method: string, params: any[] = []): Promise<any> {
