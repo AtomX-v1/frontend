@@ -78,7 +78,7 @@ export default function VaultPage() {
     const measureLatency = async () => {
       const start = performance.now();
       try {
-        await fetch('https://api.mainnet-beta.solana.com', {
+        await fetch('https://api.devnet.solana.com', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -185,9 +185,9 @@ export default function VaultPage() {
       
       if (signature) {
         addLog('success', `WITHDRAW SUCCESSFUL: ${signature.substring(0, 12)}...`);
-        
-        const estimatedValue = (shares / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue;
-        
+
+        const estimatedValue = (sharesBN.toNumber() / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue;
+
         const txId = `TX${Date.now().toString(36).toUpperCase()}`;
         setTransactions(prev => [{
           id: txId,
@@ -227,7 +227,7 @@ export default function VaultPage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="font-mono text-xs">
               <span className="text-white">NETWORK:</span>{' '}
-              <span className="text-[#9333ea]">SOLANA-MAINNET</span>
+              <span className="text-[#9333ea]">SOLANA-DEVNET</span>
               <span className="text-white ml-4">LATENCY:</span>{' '}
               <span className={vaultLatency < 200 ? 'text-[#9333ea]' : vaultLatency < 500 ? 'text-[#ffff00]' : 'text-[#ff0000]'}>
                 {vaultLatency}ms
@@ -373,16 +373,16 @@ export default function VaultPage() {
                       <div className="flex justify-between mb-1">
                         <span>EST_VALUE</span>
                         <span className="text-[#ff9900]">
-                          {vaultInfo.totalShares.gt(new BN(0)) 
-                            ? ((parseFloat(withdrawShares) / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue).toFixed(4) 
+                          {vaultInfo.totalShares.gt(new BN(0))
+                            ? ((parseFloat(withdrawShares) * 1e9 / vaultInfo.totalShares.toNumber()) * vaultInfo.totalValue).toFixed(4)
                             : '0.0000'} SOL
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>POOL_IMPACT</span>
                         <span className="text-[#ffff00]">
-                          -{vaultInfo.totalShares.gt(new BN(0)) 
-                            ? ((parseFloat(withdrawShares) / vaultInfo.totalShares.toNumber()) * 100).toFixed(2) 
+                          -{vaultInfo.totalShares.gt(new BN(0))
+                            ? ((parseFloat(withdrawShares) * 1e9 / vaultInfo.totalShares.toNumber()) * 100).toFixed(2)
                             : '0.00'}%
                         </span>
                       </div>
