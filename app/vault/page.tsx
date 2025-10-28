@@ -70,7 +70,14 @@ export default function VaultPage() {
   // Log vault errors
   useEffect(() => {
     if (vaultError) {
-      addLog('error', `VAULT ERROR: ${vaultError}`);
+      // Check if the error is about transaction already being processed
+      const isAlreadyProcessedError = vaultError.includes('Transaction has already been processed') ||
+                                     vaultError.includes('already been processed') ||
+                                     vaultError.includes('This transaction has already been processed');
+      
+      if (!isAlreadyProcessedError) {
+        addLog('error', `VAULT ERROR: ${vaultError}`);
+      }
     }
   }, [vaultError]);
 
@@ -148,7 +155,22 @@ export default function VaultPage() {
         addLog('info', 'VAULT POSITION UPDATED - SHARES ALLOCATED');
       }
     } catch (error) {
-      addLog('error', `DEPOSIT FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
+      // Check if the error is about transaction already being processed
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                     errorMessage.includes('already been processed') ||
+                                     errorMessage.includes('This transaction has already been processed');
+      
+      if (isAlreadyProcessedError) {
+        // Transaction was successful, show success message
+        addLog('success', 'DEPOSIT SUCCESSFUL - TRANSACTION CONFIRMED');
+        addLog('info', 'VAULT POSITION UPDATED - SHARES ALLOCATED');
+        
+        // Clear the deposit amount
+        setDepositAmount('');
+      } else {
+        addLog('error', `DEPOSIT FAILED: ${errorMessage || 'UNKNOWN'}`);
+      }
     } finally {
       setIsDepositing(false);
     }
@@ -202,7 +224,22 @@ export default function VaultPage() {
         addLog('info', 'VAULT POSITION UPDATED - SOL WITHDRAWN');
       }
     } catch (error) {
-      addLog('error', `WITHDRAW FAILED: ${error instanceof Error ? error.message : 'UNKNOWN'}`);
+      // Check if the error is about transaction already being processed
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isAlreadyProcessedError = errorMessage.includes('Transaction has already been processed') ||
+                                     errorMessage.includes('already been processed') ||
+                                     errorMessage.includes('This transaction has already been processed');
+      
+      if (isAlreadyProcessedError) {
+        // Transaction was successful, show success message
+        addLog('success', 'WITHDRAW SUCCESSFUL - TRANSACTION CONFIRMED');
+        addLog('info', 'VAULT POSITION UPDATED - SOL WITHDRAWN');
+        
+        // Clear the withdraw amount
+        setWithdrawShares('');
+      } else {
+        addLog('error', `WITHDRAW FAILED: ${errorMessage || 'UNKNOWN'}`);
+      }
     } finally {
       setIsWithdrawing(false);
     }

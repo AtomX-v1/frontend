@@ -89,5 +89,5 @@ export const DEX_LOGOS = {
   jupiter: '🪐',
 };
 
-export const VAULT_PROGRAM_ID = '6Y9Zhzdpfjt7qL59WA1Q8WMVRVoXhdpcTKKP1Uw4FLXz';
-export const SWAP_ROUTER_PROGRAM_ID = 'AgcU7r6U5uPEfFccmhYdMLcjckADdfoJ8QcHCgkG74Zg';
+export const VAULT_PROGRAM_ID = 'J9L1xWf6Krkg7284UThzykxNZ133Sw7Kk2fLHJ2cpKSn';
+export const SWAP_ROUTER_PROGRAM_ID = 'EoUeQknw3Mt1jbpHT6KCADu9YmD5ZgT1JFZSTDV8mNdP';

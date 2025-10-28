@@ -14,7 +14,7 @@ import { VAULT_PROGRAM_ID, getVaultPDA } from './vault';
 import BN from 'bn.js';
 
 // Router program ID from router.rs
-export const ROUTER_PROGRAM_ID = new PublicKey('AgcU7r6U5uPEfFccmhYdMLcjckADdfoJ8QcHCgkG74Zg');
+export const ROUTER_PROGRAM_ID = new PublicKey('EoUeQknw3Mt1jbpHT6KCADu9YmD5ZgT1JFZSTDV8mNdP');
 
 // Jupiter V6 program ID
 export const JUPITER_V6_PROGRAM_ID = new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4');
